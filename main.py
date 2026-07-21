@@ -11,6 +11,10 @@ print()
 nome = input("Digite seu nome:")
 saldo = float(input("digite seu saldo inicial (R$):"))
 
+# estrutura para armazenar o historico de transações 
+extrato = []
+
+
 print()
 print("=================================")
 print(f"Bem-vindo(a), {nome}!")
@@ -27,6 +31,7 @@ while opção != "0":
     print("1 - Ver Saldo")
     print("2 - depositar (receita)")
     print("3 - sacar (despesa)")
+    print("4 - extrato (historico de transações)")
     print("0 - sair")
     print("------------------------")
 
@@ -38,7 +43,9 @@ while opção != "0":
     elif opção == "2":
         valor = float(input("Digite o valor do deposito (R$)"))
         if valor > 0:
-            saldo += valor # Equivalente a saldo = saldo + valor 
+            saldo += valor 
+            # registra no historico  
+            extrato.append(("deposito", valor))
             print(f"Deposito de R$ {valor:.2f} realizado com sucesso!")
         else:
             print("Valor invalido para deposito.")
@@ -46,12 +53,24 @@ while opção != "0":
     elif opção == "3":
         valor = float(input("Digite o valor do saque (R$): "))
         if valor > 0 and valor <= saldo:
-            saldo -= valor # equivalente a saldo = saldo - valor 
+            saldo -= valor 
+            # registra no historico 
+            extrato.append(f"saque: - R$ {valor:.2f}")
             print(f"Saque de R$ {valor:.2f} realizado com sucesso!")
         elif valor > saldo:
             print("saldo insuficiente para esta operação! ")
         else:
             print("valor invalido para saque.")
+
+    elif opção == "4":
+        print("\n=============== EXTRATO ==========")
+        if not extrato: # verifica se a lista vazia
+             print("Nenhuma movimentação realizada ate o momento.")
+        else:
+            for transação in extrato:
+                 print(transação)
+        print(f"\nSaldo atual: R$ {saldo:.2f}")
+        print("===================================")
 
     elif opção == "0":
         print("\nSaindo do sistema... ate logo! ")
