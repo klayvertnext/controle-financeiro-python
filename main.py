@@ -1,80 +1,92 @@
-# projeto: Controle Financeiro em python
-# Versão: 1.0 (terminal - módulo inicial)
-# Autor: klayvert 
+# ===================================================
+# Projeto: Controle Financeiro em Python
+# Versão: 1.2 (Terminal - Refatorado com Funções)
+# Autor: Klayvert
+# ===================================================
 
-print("=================================")
-print("Sistema de Controle Financeiro")
-print("=================================")
-print()
-
-# captura de dados iniciais do usuario
-nome = input("Digite seu nome:")
-saldo = float(input("digite seu saldo inicial (R$):"))
-
-# estrutura para armazenar o historico de transações 
-extrato = []
-
-
-print()
-print("=================================")
-print(f"Bem-vindo(a), {nome}!")
-print(f"Seu saldo inicial cadastrado é: R$ {saldo:.2f}")
-print("=================================")
-
-# Menu Interativo 
-opção = ""
-
-while opção != "0":
-    print()
-    print("\------------------------")
+def exibir_menu():
+    """Exibe o menu de opções do sistema."""
+    print("\n------------------------------------")
     print("MENU PRINCIPAL")
     print("1 - Ver Saldo")
-    print("2 - depositar (receita)")
-    print("3 - sacar (despesa)")
-    print("4 - extrato (historico de transações)")
-    print("0 - sair")
-    print("------------------------")
+    print("2 - Depositar (Receita)")
+    print("3 - Sacar (Despesa)")
+    print("4 - Ver Extrato")
+    print("0 - Sair")
+    print("------------------------------------")
 
-    opção = input("escolha uma opção: ")
 
-    if opção == "1":
-        print(f"\n[SALDO ATUAL]: R$ {saldo :.2f}")
-
-    elif opção == "2":
-        valor = float(input("Digite o valor do deposito (R$)"))
-        if valor > 0:
-            saldo += valor 
-            # registra no historico  
-            extrato.append(("deposito", valor))
-            print(f"Deposito de R$ {valor:.2f} realizado com sucesso!")
-        else:
-            print("Valor invalido para deposito.")
-
-    elif opção == "3":
-        valor = float(input("Digite o valor do saque (R$): "))
-        if valor > 0 and valor <= saldo:
-            saldo -= valor 
-            # registra no historico 
-            extrato.append(f"saque: - R$ {valor:.2f}")
-            print(f"Saque de R$ {valor:.2f} realizado com sucesso!")
-        elif valor > saldo:
-            print("saldo insuficiente para esta operação! ")
-        else:
-            print("valor invalido para saque.")
-
-    elif opção == "4":
-        print("\n=============== EXTRATO ==========")
-        if not extrato: # verifica se a lista vazia
-             print("Nenhuma movimentação realizada ate o momento.")
-        else:
-            for transação in extrato:
-                 print(transação)
-        print(f"\nSaldo atual: R$ {saldo:.2f}")
-        print("===================================")
-
-    elif opção == "0":
-        print("\nSaindo do sistema... ate logo! ")
-
+def depositar(saldo, extrato):
+    """Realiza a operação de depósito e atualiza o extrato."""
+    valor = float(input("Digite o valor do depósito (R$): "))
+    if valor > 0:
+        saldo += valor
+        extrato.append(f"Depósito: + R$ {valor:.2f}")
+        print(f"Depósito de R$ {valor:.2f} realizado com sucesso!")
     else:
-        print("opção invalida! tente novamente.")        
+        print("Valor inválido para depósito.")
+    return saldo
 
+
+def sacar(saldo, extrato):
+    """Realiza a operação de saque com validação de saldo."""
+    valor = float(input("Digite o valor do saque (R$): "))
+    if valor > 0 and valor <= saldo:
+        saldo -= valor
+        extrato.append(f"Saque:    - R$ {valor:.2f}")
+        print(f"Saque de R$ {valor:.2f} realizado com sucesso!")
+    elif valor > saldo:
+        print("Saldo insuficiente para esta operação!")
+    else:
+        print("Valor inválido para saque.")
+    return saldo
+
+
+def exibir_extrato(saldo, extrato):
+    """Exibe o histórico de transações registradas."""
+    print("\n================ EXTRATO ================")
+    if not extrato:
+        print("Nenhuma movimentação realizada até o momento.")
+    else:
+        for transacao in extrato:
+            print(transacao)
+    print(f"\nSaldo atual: R$ {saldo:.2f}")
+    print("=========================================")
+
+
+def main():
+    """Função principal que orquestra o fluxo do programa."""
+    print("====================================")
+    print("  SISTEMA DE CONTROLE FINANCEIRO    ")
+    print("====================================")
+    print()
+
+    nome_usuario = input("Digite seu nome: ")
+    saldo = float(input("Digite seu saldo inicial (R$): "))
+    extrato = []
+
+    print()
+    print(f"Bem-vindo(a), {nome_usuario}! Saldo inicial: R$ {saldo:.2f}")
+
+    opcao = ""
+    while opcao != "0":
+        exibir_menu()
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == "1":
+            print(f"\n[SALDO ATUAL]: R$ {saldo:.2f}")
+        elif opcao == "2":
+            saldo = depositar(saldo, extrato)
+        elif opcao == "3":
+            saldo = sacar(saldo, extrato)
+        elif opcao == "4":
+            exibir_extrato(saldo, extrato)
+        elif opcao == "0":
+            print("\nSaindo do sistema... Até logo!")
+        else:
+            print("Opção inválida! Tente novamente.")
+
+
+# Ponto de entrada padrão do Python
+if __name__ == "__main__":
+    main()
