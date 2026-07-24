@@ -70,8 +70,49 @@ def cadastrar_cartao():
     if usuario not in DADOS_USUARIO:
         DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
         
-    DADOS_USUARIO[usuario]['cartoes'].append({'nome': nome, 'limite': limite, 'dia_vencimento': dia_vencimento})
+    # Gera ID único para o cartão
+    cartao_id = str(int(request.environ.get('werkzeug.request', 0) or 1000) * 99 + len(DADOS_USUARIO[usuario]['cartoes']) + 1)
+    
+    DADOS_USUARIO[usuario]['cartoes'].append({
+        'id': cartao_id,
+        'nome': nome,
+        'limite': limite,
+        'dia_vencimento': dia_vencimento
+    })
     return jsonify({'status': 'sucesso', 'mensagem': 'Cartão cadastrado com sucesso!'})
+
+@app.route('/editar_cartao', methods=['POST'])
+def editar_cartao():
+    if 'usuario' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    usuario = session['usuario']
+    dados = request.get_json() or {}
+    cartao_id = str(dados.get('id'))
+    nome = dados.get('nome')
+    limite = float(dados.get('limite', 0) or 0)
+    dia_vencimento = int(dados.get('dia_vencimento', 1) or 1)
+
+    if usuario in DADOS_USUARIO:
+        for c in DADOS_USUARIO[usuario]['cartoes']:
+            if str(c.get('id')) == cartao_id:
+                c['nome'] = nome
+                c['limite'] = limite
+                c['dia_vencimento'] = dia_vencimento
+                return jsonify({'status': 'sucesso', 'mensagem': 'Cartão atualizado com sucesso!'})
+    return jsonify({'status': 'erro', 'mensagem': 'Cartão não encontrado'}), 404
+
+@app.route('/excluir_cartao', methods=['POST'])
+def excluir_cartao():
+    if 'usuario' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    usuario = session['usuario']
+    dados = request.get_json() or {}
+    cartao_id = str(dados.get('id'))
+
+    if usuario in DADOS_USUARIO:
+        DADOS_USUARIO[usuario]['cartoes'] = [c for c in DADOS_USUARIO[usuario]['cartoes'] if str(c.get('id')) != cartao_id]
+        return jsonify({'status': 'sucesso', 'mensagem': 'Cartão excluído com sucesso!'})
+    return jsonify({'status': 'erro', 'mensagem': 'Erro ao excluir'}), 400
 
 @app.route('/logout')
 def logout():
