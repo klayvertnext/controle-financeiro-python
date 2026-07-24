@@ -4,7 +4,6 @@ import os
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_super_segura'
 
-# Dicionário em memória para armazenar dados dos usuários (simulando banco de dados)
 DADOS_USUARIO = {}
 
 @app.route('/')
@@ -16,7 +15,6 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Suporta tanto JSON quanto Formulário tradicional
         dados = request.get_json(silent=True) or request.form
         usuario = dados.get('usuario') or dados.get('username')
         senha = dados.get('senha') or dados.get('password')
