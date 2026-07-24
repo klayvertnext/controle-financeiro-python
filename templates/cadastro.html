@@ -211,7 +211,7 @@
       updateRequirement(reqSpecial, /[^A-Za-z0-9]/.test(val));
     });
 
-    // Envio via JSON (evita erro 415)
+    // Envio com chaves 'usuario' e 'senha' para casar com o Python
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
@@ -228,8 +228,8 @@
       if (btnIcon) btnIcon.classList.add('hidden');
       btnSpinner.classList.remove('hidden');
 
-      const username = document.getElementById('username').value;
-      const password = passwordInput.value;
+      const usuarioVal = document.getElementById('username').value.trim();
+      const senhaVal = passwordInput.value;
 
       try {
         const response = await fetch('/cadastro', {
@@ -237,7 +237,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ usuario: usuarioVal, senha: senhaVal })
         });
 
         const data = await response.json();
