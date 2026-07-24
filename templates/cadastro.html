@@ -20,25 +20,32 @@
         .register-card {
             width: 100%;
             max-width: 420px;
-            padding: 30px;
+            padding: 35px 30px 30px 30px;
             background: var(--bs-card-bg);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border: 1px solid var(--bs-border-color);
             position: relative;
         }
+        /* Botão de Alternar Modo Claro/Escuro fixo no canto superior direito */
         .theme-toggle {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
+            top: 15px;
+            right: 15px;
+            background: transparent;
             border: none;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             color: var(--bs-body-color);
             cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+            z-index: 10;
+        }
+        .theme-toggle:focus {
+            outline: none;
         }
         .form-control {
-            padding: 11px;
+            padding: 10px 12px;
             font-size: 14px;
         }
         .btn-primary {
@@ -50,13 +57,13 @@
 <body>
 
     <div class="register-card">
-        <button class="theme-toggle" id="btnToggleTheme" title="Alternar tema claro/escuro">
+        <button class="theme-toggle" id="btnToggleTheme" title="Alternar modo claro/escuro" type="button">
             <i class="bi bi-moon-fill" id="themeIcon"></i>
         </button>
 
-        <div class="text-center mb-4 mt-2">
+        <div class="text-center mb-4 mt-1">
             <h3 class="fw-bold text-primary">K-Financeiro</h3>
-            <p class="text-muted small">Crie sua conta informando seu usuário e senha</p>
+            <p class="text-muted small">Crie sua conta preenchendo os dados abaixo</p>
         </div>
 
         {% if erro %}
@@ -70,22 +77,30 @@
         <form action="/cadastro" method="POST" id="formCadastro" onsubmit="return validarFormulario(event)">
             <div class="mb-3">
                 <label for="nome" class="form-label small fw-bold text-secondary">Nome de Usuário</label>
-                <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: Joao@123" required autofocus>
+                <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: Joao@123" required autocomplete="off" autofocus>
                 <div class="form-text text-muted" style="font-size: 11px;">
-                    Deve conter pelo menos uma <strong>letra maiúscula</strong> e um <strong>símbolo</strong> (@#$%...).
+                    Obrigatório conter ao menos <strong>1 letra maiúscula</strong> e <strong>1 símbolo</strong> (ex: @, #, $, %).
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label small fw-bold text-secondary">E-mail (Gmail)</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="seuemail@gmail.com" required autocomplete="email">
+                <div class="form-text text-muted" style="font-size: 11px;">
+                    Deve ser um endereço válido exclusivo do <strong>@gmail.com</strong>.
                 </div>
             </div>
 
             <div class="mb-3">
                 <label for="senha" class="form-label small fw-bold text-secondary">Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="senha" name="senha" placeholder="Mínimo 7 dígitos" required>
+                    <input type="password" class="form-control" id="senha" name="senha" placeholder="Mínimo 7 dígitos" required autocomplete="new-password">
                     <button class="btn btn-outline-secondary" type="button" id="toggleSenha" title="Ver ou ocultar senha">
                         <i class="bi bi-eye" id="iconOlho"></i>
                     </button>
                 </div>
                 <div class="form-text text-muted" style="font-size: 11px;">
-                    A senha deve ter no mínimo <strong>7 caracteres</strong>.
+                    Mínimo de <strong>7 caracteres</strong>.
                 </div>
             </div>
 
@@ -105,7 +120,6 @@
         const themeIcon = document.getElementById('themeIcon');
         const htmlElement = document.documentElement;
 
-        // Verificar preferência salva no navegador
         const savedTheme = localStorage.getItem('theme') || 'light';
         htmlElement.setAttribute('data-bs-theme', savedTheme);
         atualizarIconeTema(savedTheme);
@@ -126,7 +140,7 @@
             }
         }
 
-        // 2. Botão de Ver / Ocultar Senha
+        // 2. Ver / Ocultar Senha
         const inputSenha = document.getElementById('senha');
         const btnToggleSenha = document.getElementById('toggleSenha');
         const iconOlho = document.getElementById('iconOlho');
@@ -141,32 +155,39 @@
             }
         });
 
-        // 3. Validação em tempo real das regras pedidas
+        // 3. Validação do Formulário no Envio
         function validarFormulario(event) {
             const nomeInput = document.getElementById('nome').value.trim();
+            const emailInput = document.getElementById('email').value.trim().toLowerCase();
             const senhaInput = document.getElementById('senha').value;
             const msgAlerta = document.getElementById('msgAlerta');
 
-            // Limpar erro do servidor se o utilizador tentar enviar de novo
             const servidorErro = document.getElementById('servidorErro');
             if (servidorErro) servidorErro.style.display = 'none';
 
-            // Regra 1: Letra maiúscula no nome de usuário
+            // Regra 1: Nome de Usuário (Maiúscula + Símbolo)
             const temMaiuscula = /[A-Z]/.test(nomeInput);
-            // Regra 2: Símbolos do tipo @#$% e etc no nome de usuário
             const temSimbolo = /[^a-zA-Z0-9\s]/.test(nomeInput);
 
             if (!temMaiuscula || !temSimbolo) {
                 event.preventDefault();
-                msgAlerta.innerText = "O nome de usuário precisa conter pelo menos uma letra maiúscula e um símbolo (ex: @, #, $, %, etc.).";
+                msgAlerta.innerText = "O nome de usuário precisa conter ao menos 1 letra maiúscula e 1 símbolo (ex: @, #, $, %).";
                 msgAlerta.classList.remove('d-none');
                 return false;
             }
 
-            // Regra 3: Senha no mínimo 7 dígitos
+            // Regra 2: E-mail deve ser exclusivamente @gmail.com
+            if (!emailInput.endsWith('@gmail.com')) {
+                event.preventDefault();
+                msgAlerta.innerText = "O e-mail deve ser um endereço válido do Gmail (@gmail.com).";
+                msgAlerta.classList.remove('d-none');
+                return false;
+            }
+
+            // Regra 3: Senha no mínimo 7 caracteres
             if (senhaInput.length < 7) {
                 event.preventDefault();
-                msgAlerta.innerText = "A senha deve ter no mínimo 7 dígitos.";
+                msgAlerta.innerText = "A senha deve ter no mínimo 7 caracteres.";
                 msgAlerta.classList.remove('d-none');
                 return false;
             }

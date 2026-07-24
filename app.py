@@ -25,8 +25,8 @@ db = SQLAlchemy(app)
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    nome = db.Column(db.String(100), unique=True, nullable=False)   # Nome de usuário único
+    email = db.Column(db.String(120), unique=True, nullable=False)  # E-mail Gmail único
     senha = db.Column(db.String(200), nullable=False)
 
     rendas = db.relationship('Renda', backref='usuario', lazy=True, cascade='all, delete-orphan')
@@ -65,7 +65,6 @@ class Cartao(db.Model):
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
 
-# Inicialização segura das tabelas
 with app.app_context():
     db.create_all()
 
@@ -85,26 +84,21 @@ def login():
         db.create_all()
 
     if request.method == 'POST':
-        # Tratamento seguro com valor padrão para evitar AttributeError em NoneType
-        email_raw = request.form.get('email', '')
-        senha_raw = request.form.get('senha', '')
-        
-        email = email_raw.strip().lower() if email_raw else ''
-        senha = senha_raw.strip() if senha_raw else ''
+        identificador = str(request.form.get('email', '') or request.form.get('nome', '')).strip().lower()
+        senha = str(request.form.get('senha', '')).strip()
 
-        # Validação amigável
-        if not email or not senha:
+        if not identificador or not senha:
             return render_template('login.html', erro="Preencha todos os campos obrigatórios.")
 
         try:
-            user = Usuario.query.filter_by(email=email).first()
+            user = Usuario.query.filter((Usuario.nome == identificador) | (Usuario.email == identificador)).first()
             if user and check_password_hash(user.senha, senha):
                 session['usuario_id'] = user.id
                 session['usuario_nome'] = user.nome
                 return redirect(url_for('dashboard'))
-            return render_template('login.html', erro="E-mail ou senha incorretos.")
+            return render_template('login.html', erro="Usuário/E-mail ou senha incorretos.")
         except Exception as e:
-            return render_template('login.html', erro="Ocorreu um erro ao processar o login. Tente novamente.")
+            return render_template('login.html', erro="Erro ao processar o login. Tente novamente.")
     
     return render_template('login.html')
 
@@ -114,7 +108,6 @@ def cadastro():
         db.create_all()
 
     if request.method == 'POST':
-        # Tratamento seguro para prevenir qualquer Erro 500 porcampos nulos (None)
         nome_raw = request.form.get('nome', '')
         email_raw = request.form.get('email', '')
         senha_raw = request.form.get('senha', '')
@@ -123,14 +116,26 @@ def cadastro():
         email = email_raw.strip().lower() if email_raw else ''
         senha = senha_raw.strip() if senha_raw else ''
 
-        # Validação robusta de campos obrigatórios
+        # Validação Básica
         if not nome or not email or not senha:
             return render_template('cadastro.html', erro="Preencha todos os campos obrigatórios.")
 
+        # Validação Estrita do Gmail
+        if not email.endswith('@gmail.com'):
+            return render_template('cadastro.html', erro="O e-mail precisa ser do Gmail (@gmail.com).")
+
+        # Validação do Tamanho da Senha
+        if len(senha) < 7:
+            return render_template('cadastro.html', erro="A senha deve ter no mínimo 7 caracteres.")
+
         try:
-            user_exist = Usuario.query.filter_by(email=email).first()
-            if user_exist:
-                return render_template('cadastro.html', erro="Este e-mail já está cadastrado.")
+            # Checa se o Nome de Usuário já existe
+            if Usuario.query.filter_by(nome=nome).first():
+                return render_template('cadastro.html', erro="Este nome de usuário já está em uso. Escolha outro.")
+
+            # Checa se o E-mail já existe
+            if Usuario.query.filter_by(email=email).first():
+                return render_template('cadastro.html', erro="Este e-mail já está cadastrado em nosso sistema.")
 
             novo_usuario = Usuario(
                 nome=nome,
@@ -145,7 +150,7 @@ def cadastro():
             return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
-            return render_template('cadastro.html', erro="Ocorreu um erro interno ao realizar o cadastro. Tente novamente.")
+            return render_template('cadastro.html', erro="Erro interno ao realizar cadastro. Tente novamente.")
     
     return render_template('cadastro.html')
 
@@ -227,7 +232,6 @@ def salvar_dados_completo():
         return jsonify({'status': 'erro', 'mensagem': 'Dados inválidos'}), 400
 
     try:
-        # Sincronizar Rendas
         rendas_data = req_data.get('rendas', {})
         for mes, val in rendas_data.items():
             r_obj = Renda.query.filter_by(usuario_id=user_id, mes_referencia=mes).first()
@@ -243,7 +247,6 @@ def salvar_dados_completo():
                 )
                 db.session.add(nova_renda)
 
-        # Sincronizar Despesas
         Despesa.query.filter_by(usuario_id=user_id).delete()
         despesas_data = req_data.get('despesas', [])
         for d in despesas_data:
