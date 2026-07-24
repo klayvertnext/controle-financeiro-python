@@ -16,31 +16,8 @@
         extend: {
           colors: {
             brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              400: '#818cf8',
               500: '#6366f1',
               600: '#4f46e5',
-              700: '#4338ca',
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.25s ease-out forwards',
-            'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'glow-pulse': 'glowPulse 6s ease-in-out infinite alternate',
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
-            },
-            slideUp: {
-              '0%': { opacity: '0', transform: 'translateY(12px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            },
-            glowPulse: {
-              '0%': { opacity: '0.15', transform: 'scale(1)' },
-              '100%': { opacity: '0.35', transform: 'scale(1.05)' },
             }
           }
         }
@@ -50,75 +27,49 @@
 
   <style>
     body {
-      background-color: #080a11;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    .bg-dots {
-      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-    /* Scrollbar personalizada */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #080a11;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
+      background-color: #0b0f19;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
   </style>
 </head>
-<body class="min-h-screen text-slate-100 bg-dots antialiased selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden animate-fade-in">
+<body class="min-h-screen text-slate-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div class="absolute -top-40 -left-40 w-[35rem] h-[35rem] bg-indigo-600/15 rounded-full blur-[140px] animate-glow-pulse"></div>
-    <div class="absolute top-1/2 -right-40 w-[30rem] h-[30rem] bg-violet-600/10 rounded-full blur-[140px] animate-glow-pulse" style="animation-delay: 3s;"></div>
-  </div>
-
-  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
-
-  <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+  <header class="w-full border-b border-slate-800 bg-slate-900/80 sticky top-0 z-30 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
       
-      <div class="flex items-center space-x-4">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
-          <span class="text-xl font-black text-white tracking-widest">K$</span>
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-white text-lg tracking-wider">
+          K$
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white tracking-tight leading-none flex items-center space-x-2">
-            <span>Olá, <span id="userNameHeader" class="text-indigo-400">Usuário</span></span>
+          <h1 class="text-sm sm:text-base font-bold text-white leading-tight">
+            Olá, <span id="userNameHeader" class="text-indigo-400">Usuário</span>
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Visão geral da sua saúde financeira</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Gerenciamento financeiro simples</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-3">
         <div class="relative">
-          <select id="monthSelect" class="appearance-none bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-semibold py-2.5 pl-3.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all cursor-pointer">
-            <option value="1">Janeiro</option>
-            <option value="2">Fevereiro</option>
-            <option value="3">Março</option>
-            <option value="4">Abril</option>
-            <option value="5">Maio</option>
-            <option value="6">Junho</option>
-            <option value="7">Julho</option>
-            <option value="8">Agosto</option>
-            <option value="9">Setembro</option>
-            <option value="10">Outubro</option>
-            <option value="11">Novembro</option>
-            <option value="12">Dezembro</option>
+          <select id="monthSelect" onchange="carregarDadosDoMes()" class="appearance-none bg-slate-950 border border-slate-700 hover:border-slate-600 text-slate-100 text-xs font-medium py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+            <option value="1">Janeiro de 2026</option>
+            <option value="2">Fevereiro de 2026</option>
+            <option value="3">Março de 2026</option>
+            <option value="4">Abril de 2026</option>
+            <option value="5">Maio de 2026</option>
+            <option value="6">Junho de 2026</option>
+            <option value="7" selected>Julho de 2026</option>
+            <option value="8">Agosto de 2026</option>
+            <option value="9">Setembro de 2026</option>
+            <option value="10">Outubro de 2026</option>
+            <option value="11">Novembro de 2026</option>
+            <option value="12">Dezembro de 2026</option>
           </select>
           <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
         </div>
 
-        <a href="/logout" class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/30 text-slate-400 hover:text-rose-400 rounded-xl text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
+        <a href="/logout" class="px-3 py-2 bg-slate-800 hover:bg-rose-500/10 border border-slate-700 hover:border-rose-500/30 text-slate-300 hover:text-rose-400 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">Sair</span>
         </a>
       </div>
@@ -126,112 +77,191 @@
     </div>
   </header>
 
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 space-y-8">
-
-    <nav class="flex border-b border-slate-800/80 space-x-8" aria-label="Abas">
-      <button id="tabDashboard" onclick="switchTab('dashboard')" class="tab-btn pb-3.5 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-sm flex items-center space-x-2 transition-all">
+  <div class="border-b border-slate-800 bg-slate-900/40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex space-x-6">
+      <button id="tabDashboard" onclick="switchTab('dashboard')" class="py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
         <span>Dashboard & Rendas</span>
       </button>
-      <button id="tabCards" onclick="switchTab('cards')" class="tab-btn pb-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all">
+      <button id="tabCards" onclick="switchTab('cards')" class="py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2">
         <i data-lucide="credit-card" class="w-4 h-4"></i>
         <span>Cartões & Saídas</span>
       </button>
-    </nav>
+    </div>
+  </div>
 
-    <section id="sectionDashboard" class="space-y-8 animate-slide-up">
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <section id="sectionDashboard" class="space-y-6">
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+        <div class="mb-4">
+          <h2 class="text-base font-bold text-white">Suas fontes de renda</h2>
+          <p class="text-xs text-slate-400">Informe ou atualize seus ganhos para o mês selecionado</p>
+        </div>
+
+        <form id="formRendas" onsubmit="salvarRendas(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div>
+            <label for="inputSalarioFixo" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Salário Fixo (R$)</label>
+            <input type="number" step="0.01" id="inputSalarioFixo" placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label for="inputRendaExtra" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Renda Extra / Freelance (R$)</label>
+            <input type="number" step="0.01" id="inputRendaExtra" placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          </div>
+
+          <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Atualizar Rendas</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        <div class="relative group bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl p-6 shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Renda Total</span>
-            <div class="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
-              <i data-lucide="trending-up" class="w-5 h-5"></i>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase text-slate-400">Renda Total</span>
+            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="text-3xl font-black text-white tracking-tight" id="valRendaTotal">R$ 0,00</div>
-          <p class="text-xs text-slate-500 mt-2">Soma de todas as entradas do mês</p>
+          <div>
+            <div class="text-2xl font-extrabold text-white" id="valRendaTotal">R$ 0,00</div>
+            <p class="text-[11px] text-slate-400 mt-1">Salário + Renda Extra</p>
+          </div>
         </div>
 
-        <div class="relative group bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-rose-500/40 rounded-3xl p-6 shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Saídas do Mês</span>
-            <div class="p-2.5 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-110 transition-transform">
-              <i data-lucide="trending-down" class="w-5 h-5"></i>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase text-slate-400">Saídas do Mês</span>
+            <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="text-3xl font-black text-white tracking-tight" id="valSaidasTotal">R$ 0,00</div>
-          <p class="text-xs text-slate-500 mt-2">Faturas de cartões + saídas extras</p>
+          <div>
+            <div class="text-2xl font-extrabold text-white" id="valSaidasTotal">R$ 0,00</div>
+            <p class="text-[11px] text-slate-400 mt-1">Total de despesas cadastradas</p>
+          </div>
         </div>
 
-        <div class="relative group bg-gradient-to-b from-indigo-950/40 to-slate-900/80 backdrop-blur-xl border border-indigo-500/30 hover:border-indigo-500/60 rounded-3xl p-6 shadow-xl shadow-indigo-950/20 transition-all duration-300 hover:-translate-y-1">
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Saldo Livre</span>
-            <div class="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:scale-110 transition-transform">
-              <i data-lucide="wallet" class="w-5 h-5"></i>
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase text-indigo-300">Saldo Livre Estimado</span>
+            <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="text-3xl font-black text-white tracking-tight" id="valSaldoLivre">R$ 0,00</div>
-          <p class="text-xs text-slate-400 mt-2">Disponível após descontar compromissos</p>
+          <div>
+            <div class="text-2xl font-extrabold text-white" id="valSaldoLivre">R$ 0,00</div>
+            <p class="text-[11px] text-slate-400 mt-1">Renda Total menos Saídas do Mês</p>
+          </div>
         </div>
 
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div class="lg:col-span-2 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 shadow-xl flex flex-col">
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 class="text-base font-bold text-white tracking-tight">Comparativo de Despesas</h2>
-              <p class="text-xs text-slate-400">Distribuição entre categorias e cartões</p>
-            </div>
-            <div class="p-2 bg-slate-950 rounded-xl border border-slate-800 text-slate-400">
-              <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-            </div>
-          </div>
-          <div class="flex-1 min-h-[260px] relative">
-            <canvas id="financeChart"></canvas>
-          </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+        <div class="mb-4">
+          <h2 class="text-base font-bold text-white">Proporção financeira do mês</h2>
+          <p class="text-xs text-slate-400">Distribuição entre suas entradas e saídas reais</p>
         </div>
 
-        <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 shadow-xl flex flex-col space-y-6">
-          <div>
-            <h2 class="text-base font-bold text-white tracking-tight">Entradas & Rendas</h2>
-            <p class="text-xs text-slate-400">Cadastre seus ganhos deste mês</p>
+        <div class="relative flex items-center justify-center min-h-[240px] max-h-[300px]">
+          
+          <div id="chartEmptyState" class="hidden text-center py-8">
+            <i data-lucide="pie-chart" class="w-12 h-12 text-slate-600 mx-auto mb-2"></i>
+            <p class="text-xs font-medium text-slate-400">Não há movimentações registradas neste mês.</p>
           </div>
 
-          <form id="formRenda" class="space-y-4">
-            <div>
-              <label for="rendaDesc" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Descrição</label>
-              <input type="text" id="rendaDesc" placeholder="Ex: Salário, Freela..." required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
-            </div>
-            <div>
-              <label for="rendaValor" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Valor (R$)</label>
-              <input type="number" step="0.01" id="rendaValor" placeholder="0,00" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
-            </div>
-            <button type="submit" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/20 transition-all duration-200 active:scale-[0.98] flex items-center justify-center space-x-2">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Adicionar Renda</span>
-            </button>
-          </form>
-
-          <div class="flex-1 overflow-y-auto max-h-[220px] space-y-2 pr-1" id="listRendas">
-            </div>
+          <canvas id="proporcaoChart" class="max-w-xs"></canvas>
         </div>
-
       </div>
 
     </section>
 
-    <section id="sectionCards" class="hidden space-y-8 animate-slide-up">
-      <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-xl text-center py-16">
-        <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <i data-lucide="credit-card" class="w-8 h-8"></i>
+    <section id="sectionCards" class="hidden space-y-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h2 class="text-base font-bold text-white mb-1">Cadastrar nova despesa</h2>
+          <p class="text-xs text-slate-400 mb-4">Adicione uma saída para o mês selecionado</p>
+
+          <form id="formDespesa" onsubmit="cadastrarDespesa(event)" class="space-y-3">
+            <div>
+              <label for="despesaDesc" class="block text-xs uppercase font-bold text-slate-300 mb-1">Descrição</label>
+              <input type="text" id="despesaDesc" placeholder="Ex: Mercado, Conta de Luz..." required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="despesaValor" class="block text-xs uppercase font-bold text-slate-300 mb-1">Valor (R$)</label>
+                <input type="number" step="0.01" id="despesaValor" placeholder="0,00" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              </div>
+              <div>
+                <label for="despesaData" class="block text-xs uppercase font-bold text-slate-300 mb-1">Data</label>
+                <input type="date" id="despesaData" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 mt-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Adicionar Despesa</span>
+            </button>
+          </form>
         </div>
-        <h2 class="text-xl font-bold text-white mb-2">Módulo de Cartões & Saídas</h2>
-        <p class="text-slate-400 text-sm max-w-md mx-auto">Gerencie seus limites, faturas e controle todas as despesas variáveis e fixas com facilidade.</p>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h2 class="text-base font-bold text-white mb-1">Cadastrar novo cartão</h2>
+          <p class="text-xs text-slate-400 mb-4">Gerencie os cartões de crédito vinculados</p>
+
+          <form id="formCartao" onsubmit="cadastrarCartao(event)" class="space-y-3">
+            <div>
+              <label for="cartaoNome" class="block text-xs uppercase font-bold text-slate-300 mb-1">Nome do Cartão</label>
+              <input type="text" id="cartaoNome" placeholder="Ex: Nubank, Itaú..." required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="cartaoLimite" class="block text-xs uppercase font-bold text-slate-300 mb-1">Limite (R$)</label>
+                <input type="number" step="0.01" id="cartaoLimite" placeholder="0,00" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              </div>
+              <div>
+                <label for="cartaoVencimento" class="block text-xs uppercase font-bold text-slate-300 mb-1">Dia do Vencimento</label>
+                <input type="number" min="1" max="31" id="cartaoVencimento" placeholder="Ex: 10" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-xs border border-slate-700 transition-all flex items-center justify-center space-x-1.5 mt-2">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+              <span>Salvar Cartão</span>
+            </button>
+          </form>
+        </div>
+
       </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+        <h2 class="text-base font-bold text-white mb-1">Extrato do mês</h2>
+        <p class="text-xs text-slate-400 mb-4">Lista detalhada de saídas registradas no mês selecionado</p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+              <tr>
+                <th class="p-3">Descrição</th>
+                <th class="p-3">Data</th>
+                <th class="p-3">Valor</th>
+                <th class="p-3 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaExtrato" class="divide-y divide-slate-800/60">
+              </tbody>
+          </table>
+        </div>
+      </div>
+
     </section>
 
   </main>
@@ -239,33 +269,14 @@
   <script>
     lucide.createIcons();
 
-    // 1. SISTEMA DE TOASTS MODERNOS
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      
-      const isSuccess = type === 'success';
-      const bgBorder = isSuccess 
-        ? 'bg-slate-900/90 border-emerald-500/40 text-emerald-400' 
-        : 'bg-slate-900/90 border-rose-500/40 text-rose-400';
-      const icon = isSuccess ? 'check-circle-2' : 'alert-circle';
+    // DADOS GLOBAIS LOCAIS (INTEGRAÇÃO COM BACKEND)
+    let estadoFinanceiro = {
+      salarioFixo: 0.00,
+      rendaExtra: 0.00,
+      saidasDoMes: 0.00
+    };
 
-      toast.className = `pointer-events-auto flex items-center space-x-3 px-4 py-3 border rounded-2xl shadow-2xl backdrop-blur-xl text-xs font-semibold animate-fade-in transition-all duration-300 ${bgBorder}`;
-      toast.innerHTML = `
-        <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
-        <span class="text-slate-200">${message}</span>
-      `;
-
-      container.appendChild(toast);
-      lucide.createIcons();
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-[-8px]');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    // 2. TROCA DE ABAS
+    // ALTERAÇÃO DE ABAS
     function switchTab(tab) {
       const tabDash = document.getElementById('tabDashboard');
       const tabCards = document.getElementById('tabCards');
@@ -273,88 +284,127 @@
       const secCards = document.getElementById('sectionCards');
 
       if (tab === 'dashboard') {
-        tabDash.className = "tab-btn pb-3.5 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-sm flex items-center space-x-2 transition-all";
-        tabCards.className = "tab-btn pb-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all";
+        tabDash.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
+        tabCards.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
         secDash.classList.remove('hidden');
         secCards.classList.add('hidden');
       } else {
-        tabCards.className = "tab-btn pb-3.5 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-sm flex items-center space-x-2 transition-all";
-        tabDash.className = "tab-btn pb-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all";
+        tabCards.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
+        tabDash.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
         secCards.classList.remove('hidden');
         secDash.classList.add('hidden');
       }
     }
 
-    // 3. ANIMAÇÃO COUNT UP DE NÚMEROS
-    function animateValue(id, start, end, duration) {
-      const obj = document.getElementById(id);
-      if (!obj) return;
-      let startTimestamp = null;
-      const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const current = progress * (end - start) + start;
-        obj.innerHTML = current.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        if (progress < 1) {
-          window.requestAnimationFrame(step);
-        }
-      };
-      window.requestAnimationFrame(step);
+    // FORMATAÇÃO DE MOEDA BRL
+    function formatarBRL(valor) {
+      return (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
-    // 4. CHART.JS CONFIGURAÇÃO MODERNA
-    let financeChart;
-    function initChart() {
-      const ctx = document.getElementById('financeChart').getContext('2d');
-      financeChart = new Chart(ctx, {
-        type: 'bar',
+    // GRÁFICO DE ROSCA
+    let proporcaoChart;
+    function atualizarGrafico(salario, extra, saidas) {
+      const canvas = document.getElementById('proporcaoChart');
+      const emptyState = document.getElementById('chartEmptyState');
+      const totalMovimentado = salario + extra + saidas;
+
+      if (totalMovimentado === 0) {
+        canvas.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      canvas.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      const ctx = canvas.getContext('2d');
+
+      if (proporcaoChart) {
+        proporcaoChart.destroy();
+      }
+
+      proporcaoChart = new Chart(ctx, {
+        type: 'doughnut',
         data: {
-          labels: ['S1', 'S2', 'S3', 'S4'],
+          labels: ['Salário Fixo', 'Renda Extra', 'Saídas do Mês'],
           datasets: [{
-            label: 'Saídas (R$)',
-            data: [1200, 1900, 800, 1500],
-            backgroundColor: 'rgba(99, 102, 241, 0.8)',
-            hoverBackgroundColor: 'rgba(129, 140, 248, 1)',
-            borderRadius: 8,
-            borderSkipped: false,
+            data: [salario, extra, saidas],
+            backgroundColor: [
+              '#10b981', // Verde
+              '#3b82f6', // Azul
+              '#f43f5e'  // Rosa/Vermelho
+            ],
+            borderColor: '#0b0f19',
+            borderWidth: 3
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#94a3b8',
+                font: { size: 11 },
+                padding: 16
+              }
+            },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#f8fafc',
-              bodyColor: '#cbd5e1',
-              borderColor: '#334155',
-              borderWidth: 1,
-              padding: 12,
-              boxPadding: 6,
-              usePointStyle: true,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  return ` ${label}: ${formatarBRL(value)}`;
+                }
+              }
             }
           },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { color: '#64748b', font: { size: 11 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#64748b', font: { size: 11 } }
-            }
-          }
+          cutout: '70%'
         }
       });
     }
 
-    // Inicializações ao carregar
+    // ATUALIZAR INTERFACE
+    function renderizarResumo() {
+      const rendaTotal = estadoFinanceiro.salarioFixo + estadoFinanceiro.rendaExtra;
+      const saldoLivre = rendaTotal - estadoFinanceiro.saidasDoMes;
+
+      document.getElementById('valRendaTotal').textContent = formatarBRL(rendaTotal);
+      document.getElementById('valSaidasTotal').textContent = formatarBRL(estadoFinanceiro.saidasDoMes);
+      document.getElementById('valSaldoLivre').textContent = formatarBRL(saldoLivre);
+
+      atualizarGrafico(
+        estadoFinanceiro.salarioFixo,
+        estadoFinanceiro.rendaExtra,
+        estadoFinanceiro.saidasDoMes
+      );
+    }
+
+    // CARREGAR DADOS AO MUDAR MÊS (INTEGRAR COM SEU FETCH / APP.PY)
+    function carregarDadosDoMes() {
+      const mes = document.getElementById('monthSelect').value;
+      
+      // EXEMPLO DE RECUPERAÇÃO / ATUALIZAÇÃO
+      // No seu fluxo real, aqui é chamado o endpoint com o mês selecionado
+      renderizarResumo();
+    }
+
+    // SALVAR RENDAS
+    function salvarRendas(e) {
+      e.preventDefault();
+      const salario = parseFloat(document.getElementById('inputSalarioFixo').value) || 0;
+      const extra = parseFloat(document.getElementById('inputRendaExtra').value) || 0;
+
+      estadoFinanceiro.salarioFixo = salario;
+      estadoFinanceiro.rendaExtra = extra;
+
+      renderizarResumo();
+    }
+
+    // INICIALIZAÇÃO
     document.addEventListener('DOMContentLoaded', () => {
-      initChart();
-      animateValue('valRendaTotal', 0, 8500.00, 1000);
-      animateValue('valSaidasTotal', 0, 3200.50, 1000);
-      animateValue('valSaldoLivre', 0, 5299.50, 1000);
+      renderizarResumo();
     });
   </script>
 </body>
