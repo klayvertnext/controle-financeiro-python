@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import time
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_super_segura'
@@ -70,8 +71,7 @@ def cadastrar_cartao():
     if usuario not in DADOS_USUARIO:
         DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
         
-    # Gera ID único para o cartão
-    cartao_id = str(int(request.environ.get('werkzeug.request', 0) or 1000) * 99 + len(DADOS_USUARIO[usuario]['cartoes']) + 1)
+    cartao_id = str(int(time.time() * 1000))
     
     DADOS_USUARIO[usuario]['cartoes'].append({
         'id': cartao_id,
