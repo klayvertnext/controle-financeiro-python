@@ -4,213 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - K$ Financeiro</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              400: '#818cf8',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.25s ease-out forwards',
-            'card-entry': 'cardEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'glow-pulse': 'glowPulse 6s ease-in-out infinite alternate',
-          },
-          keyframes: {
-            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            cardEntry: { '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
-            glowPulse: { '0%': { opacity: '0.25', transform: 'scale(1)' }, '100%': { opacity: '0.45', transform: 'scale(1.08)' } }
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    body {
-      background-color: #080a11;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    .bg-dots {
-      background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-  </style>
 </head>
-<body class="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 relative overflow-x-hidden antialiased select-none bg-dots animate-fade-in">
+<body class="min-h-screen bg-[#080a11] text-slate-100 flex items-center justify-center p-4">
+  <main class="w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white font-black text-2xl mb-4">K$</div>
+      <h1 class="text-2xl font-bold">Bem-vindo de volta</h1>
+      <p class="text-slate-400 text-sm mt-1">Acesse sua conta para gerenciar finanças.</p>
+    </div>
 
-  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div class="absolute -top-32 -left-32 w-[28rem] h-[28rem] bg-indigo-600/20 rounded-full blur-[120px] animate-glow-pulse"></div>
-    <div class="absolute -bottom-32 -right-32 w-[28rem] h-[28rem] bg-violet-600/15 rounded-full blur-[120px] animate-glow-pulse" style="animation-delay: 3s;"></div>
-  </div>
+    <div id="errorMessage" class="hidden mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium"></div>
 
-  <main class="w-full max-w-md bg-slate-900/70 backdrop-blur-2xl border border-slate-800/80 rounded-3xl shadow-2xl shadow-indigo-950/40 p-8 sm:p-10 relative z-10 animate-card-entry transition-all duration-300">
-    
-    <header class="text-center mb-8">
-      <div class="inline-relative mb-4 group">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 shadow-xl shadow-indigo-500/25 ring-1 ring-white/20 transition-all duration-300 group-hover:scale-105 group-hover:shadow-indigo-500/40">
-          <span class="text-2xl font-black text-white tracking-widest drop-shadow-md">K$</span>
-        </div>
-      </div>
-      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Bem-vindo de volta</h1>
-      <p class="text-slate-400 text-sm">Acesse sua conta para gerenciar suas finanças.</p>
-    </header>
-
-    <div id="errorMessage" class="hidden mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium animate-fade-in"></div>
-
-    <form id="loginForm" class="space-y-5">
-      
-      <div class="space-y-2">
-        <label for="username" class="block text-xs uppercase font-bold text-slate-300 tracking-wider">Usuário</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors duration-200">
-            <i data-lucide="user" class="w-5 h-5"></i>
-          </div>
-          <input 
-            type="text" 
-            id="username" 
-            name="username" 
-            required 
-            autocomplete="username"
-            placeholder="Digite seu usuário"
-            class="w-full pl-11 pr-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 transition-all duration-200 text-sm hover:border-slate-700"
-          >
-        </div>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-xs uppercase font-bold text-slate-300 mb-1">Usuário</label>
+        <input type="text" id="username" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
 
-      <div class="space-y-2">
-        <label for="password" class="block text-xs uppercase font-bold text-slate-300 tracking-wider">Senha</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors duration-200">
-            <i data-lucide="lock" class="w-5 h-5"></i>
-          </div>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            required 
-            autocomplete="current-password"
-            placeholder="••••••••"
-            class="w-full pl-11 pr-11 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 transition-all duration-200 text-sm hover:border-slate-700"
-          >
-          <button 
-            type="button" 
-            id="togglePassword"
-            tabindex="-1"
-            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 focus:outline-none transition-colors duration-200"
-            aria-label="Mostrar ou ocultar senha"
-          >
-            <i data-lucide="eye" id="eyeIcon" class="w-5 h-5"></i>
-          </button>
-        </div>
+      <div>
+        <label class="block text-xs uppercase font-bold text-slate-300 mb-1">Senha</label>
+        <input type="password" id="password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
 
-      <button 
-        type="submit" 
-        id="submitBtn"
-        class="w-full mt-2 py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/40 transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-slate-900 flex items-center justify-center space-x-2 disabled:opacity-75 disabled:cursor-not-allowed group"
-      >
-        <span id="btnText">Entrar na conta</span>
-        <i data-lucide="arrow-right" id="btnIcon" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"></i>
-        <div id="btnSpinner" class="hidden w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+      <button type="submit" id="submitBtn" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/30">
+        Entrar na conta
       </button>
-
     </form>
 
-    <footer class="mt-8 pt-6 border-t border-slate-800/80 text-center">
-      <p class="text-sm text-slate-400">
-        Ainda não possui uma conta? 
-        <a href="/cadastro" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200 underline-offset-4 hover:underline">
-          Criar nova conta
-        </a>
-      </p>
+    <footer class="mt-6 text-center text-sm text-slate-400">
+      Não tem conta? <a href="/cadastro" class="text-indigo-400 hover:underline font-semibold">Criar nova conta</a>
     </footer>
-
   </main>
 
   <script>
     lucide.createIcons();
-
-    // Toggle Mostrar/Ocultar Senha
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
-
-    togglePassword.addEventListener('click', () => {
-      const isPassword = passwordInput.getAttribute('type') === 'password';
-      passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-      eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
-      lucide.createIcons();
-    });
-
-    // Envio do formulário
-    const form = document.getElementById('loginForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
-    const btnSpinner = document.getElementById('btnSpinner');
-    const errorMessage = document.getElementById('errorMessage');
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+      const errBox = document.getElementById('errorMessage');
       
-      errorMessage.classList.add('hidden');
-      submitBtn.disabled = true;
-      btnText.textContent = "Entrando...";
-      if (btnIcon) btnIcon.classList.add('hidden');
-      btnSpinner.classList.remove('hidden');
-
-      const userVal = document.getElementById('username').value.trim();
-      const passVal = passwordInput.value;
-
       try {
-        const response = await fetch('/login', {
+        const res = await fetch('/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          // Envia 'usuario' e 'username' / 'senha' e 'password' para garantir compatibilidade total com a rota do Flask
-          body: JSON.stringify({ 
-            usuario: userVal, 
-            username: userVal, 
-            senha: passVal, 
-            password: passVal 
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario: user, senha: pass })
         });
-
-        const data = await response.json();
-
-        if (response.ok && (data.status === 'sucesso' || response.redirected)) {
+        const data = await res.json();
+        if (res.ok && data.status === 'sucesso') {
           window.location.href = data.redirect || '/dashboard';
         } else {
-          errorMessage.textContent = data.mensagem || data.erro || 'Usuário ou senha incorretos.';
-          errorMessage.classList.remove('hidden');
-          
-          submitBtn.disabled = false;
-          btnText.textContent = "Entrar na conta";
-          if (btnIcon) btnIcon.classList.remove('hidden');
-          btnSpinner.classList.add('hidden');
+          errBox.textContent = data.mensagem || 'Erro ao autenticar.';
+          errBox.classList.remove('hidden');
         }
       } catch (err) {
-        errorMessage.textContent = 'Erro de conexão com o servidor. Tente novamente.';
-        errorMessage.classList.remove('hidden');
-        
-        submitBtn.disabled = false;
-        btnText.textContent = "Entrar na conta";
-        if (btnIcon) btnIcon.classList.remove('hidden');
-        btnSpinner.classList.add('hidden');
+        errBox.textContent = 'Erro de conexão com o servidor.';
+        errBox.classList.remove('hidden');
       }
     });
   </script>

@@ -4,81 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - K$ Financeiro</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              500: '#6366f1',
-              600: '#4f46e5',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    body {
-      background-color: #0b0f19;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-  </style>
+  <style>body { background-color: #0b0f19; font-family: system-ui, sans-serif; }</style>
 </head>
-<body class="min-h-screen text-slate-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+<body class="min-h-screen text-slate-100 flex flex-col antialiased">
 
   <header class="w-full border-b border-slate-800 bg-slate-900/80 sticky top-0 z-30 backdrop-blur-md">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-      
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-white text-lg tracking-wider">
-          K$
-        </div>
-        <div>
-          <h1 class="text-sm sm:text-base font-bold text-white leading-tight">
-            Olá, <span id="userNameHeader" class="text-indigo-400">Usuário</span>
-          </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">Gerenciamento financeiro simples</p>
-        </div>
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-white text-lg">K$</div>
+        <h1 class="text-sm sm:text-base font-bold text-white">Olá, <span id="userNameHeader" class="text-indigo-400">Usuário</span></h1>
       </div>
-
       <div class="flex items-center space-x-3">
-        <div class="relative">
-          <select id="monthSelect" onchange="carregarDadosDoMes()" class="appearance-none bg-slate-950 border border-slate-700 hover:border-slate-600 text-slate-100 text-xs font-medium py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-            <option value="1">Janeiro de 2026</option>
-            <option value="2">Fevereiro de 2026</option>
-            <option value="3">Março de 2026</option>
-            <option value="4">Abril de 2026</option>
-            <option value="5">Maio de 2026</option>
-            <option value="6">Junho de 2026</option>
-            <option value="7" selected>Julho de 2026</option>
-            <option value="8">Agosto de 2026</option>
-            <option value="9">Setembro de 2026</option>
-            <option value="10">Outubro de 2026</option>
-            <option value="11">Novembro de 2026</option>
-            <option value="12">Dezembro de 2026</option>
-          </select>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
-
-        <a href="/logout" class="px-3 py-2 bg-slate-800 hover:bg-rose-500/10 border border-slate-700 hover:border-rose-500/30 text-slate-300 hover:text-rose-400 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1">
+        <select id="monthSelect" class="bg-slate-950 border border-slate-700 text-slate-100 text-xs py-2 px-3 rounded-lg focus:outline-none">
+          <option value="7" selected>Julho de 2026</option>
+        </select>
+        <a href="/logout" class="px-3 py-2 bg-slate-800 border border-slate-700 text-slate-300 hover:text-rose-400 rounded-lg text-xs flex items-center space-x-1">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Sair</span>
+          <span>Sair</span>
         </a>
       </div>
-
     </div>
   </header>
 
   <div class="border-b border-slate-800 bg-slate-900/40">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex space-x-6">
+    <div class="max-w-6xl mx-auto px-4 flex space-x-6">
       <button id="tabDashboard" onclick="switchTab('dashboard')" class="py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
         <span>Dashboard & Rendas</span>
@@ -90,178 +42,46 @@
     </div>
   </div>
 
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
 
     <section id="sectionDashboard" class="space-y-6">
-
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
-        <div class="mb-4">
-          <h2 class="text-base font-bold text-white">Suas fontes de renda</h2>
-          <p class="text-xs text-slate-400">Informe ou atualize seus ganhos para o mês selecionado</p>
-        </div>
-
-        <form id="formRendas" onsubmit="salvarRendas(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-          <div>
-            <label for="inputSalarioFixo" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Salário Fixo (R$)</label>
-            <input type="number" step="0.01" id="inputSalarioFixo" placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-          </div>
-
-          <div>
-            <label for="inputRendaExtra" class="block text-xs uppercase font-bold text-slate-300 mb-1.5">Renda Extra / Freelance (R$)</label>
-            <input type="number" step="0.01" id="inputRendaExtra" placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-          </div>
-
-          <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
-            <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Atualizar Rendas</span>
-          </button>
-        </form>
-      </div>
-
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold uppercase text-slate-400">Renda Total</span>
-            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
-            </div>
-          </div>
-          <div>
-            <div class="text-2xl font-extrabold text-white" id="valRendaTotal">R$ 0,00</div>
-            <p class="text-[11px] text-slate-400 mt-1">Salário + Renda Extra</p>
-          </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <span class="text-xs font-bold uppercase text-slate-400">Renda Total</span>
+          <div class="text-2xl font-extrabold text-white mt-2" id="valRendaTotal">R$ 0,00</div>
         </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold uppercase text-slate-400">Saídas do Mês</span>
-            <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-            </div>
-          </div>
-          <div>
-            <div class="text-2xl font-extrabold text-white" id="valSaidasTotal">R$ 0,00</div>
-            <p class="text-[11px] text-slate-400 mt-1">Total de despesas cadastradas</p>
-          </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <span class="text-xs font-bold uppercase text-slate-400">Saídas do Mês</span>
+          <div class="text-2xl font-extrabold text-white mt-2" id="valSaidasTotal">R$ 0,00</div>
         </div>
-
-        <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold uppercase text-indigo-300">Saldo Livre Estimado</span>
-            <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              <i data-lucide="wallet" class="w-4 h-4"></i>
-            </div>
-          </div>
-          <div>
-            <div class="text-2xl font-extrabold text-white" id="valSaldoLivre">R$ 0,00</div>
-            <p class="text-[11px] text-slate-400 mt-1">Renda Total menos Saídas do Mês</p>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
-        <div class="mb-4">
-          <h2 class="text-base font-bold text-white">Proporção financeira do mês</h2>
-          <p class="text-xs text-slate-400">Distribuição entre suas entradas e saídas reais</p>
-        </div>
-
-        <div class="relative flex items-center justify-center min-h-[240px] max-h-[300px]">
-          
-          <div id="chartEmptyState" class="hidden text-center py-8">
-            <i data-lucide="pie-chart" class="w-12 h-12 text-slate-600 mx-auto mb-2"></i>
-            <p class="text-xs font-medium text-slate-400">Não há movimentações registradas neste mês.</p>
-          </div>
-
-          <canvas id="proporcaoChart" class="max-w-xs"></canvas>
+        <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl p-5">
+          <span class="text-xs font-bold uppercase text-indigo-300">Saldo Livre</span>
+          <div class="text-2xl font-extrabold text-white mt-2" id="valSaldoLivre">R$ 0,00</div>
         </div>
       </div>
-
     </section>
 
     <section id="sectionCards" class="hidden space-y-6">
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h2 class="text-base font-bold text-white mb-1">Cadastrar nova despesa</h2>
-          <p class="text-xs text-slate-400 mb-4">Adicione uma saída para o mês selecionado</p>
-
-          <form id="formDespesa" onsubmit="cadastrarDespesa(event)" class="space-y-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-md">
+        <h2 class="text-base font-bold text-white mb-1">Cadastrar novo cartão</h2>
+        <form id="formCartao" onsubmit="cadastrarCartao(event)" class="space-y-3 mt-3">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-300 mb-1">Nome do Cartão</label>
+            <input type="text" id="cartaoNome" placeholder="Ex: Nubank" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="despesaDesc" class="block text-xs uppercase font-bold text-slate-300 mb-1">Descrição</label>
-              <input type="text" id="despesaDesc" placeholder="Ex: Mercado, Conta de Luz..." required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              <label class="block text-xs uppercase font-bold text-slate-300 mb-1">Limite (R$)</label>
+              <input type="number" step="0.01" id="cartaoLimite" placeholder="0,00" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
             </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="despesaValor" class="block text-xs uppercase font-bold text-slate-300 mb-1">Valor (R$)</label>
-                <input type="number" step="0.01" id="despesaValor" placeholder="0,00" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
-              </div>
-              <div>
-                <label for="despesaData" class="block text-xs uppercase font-bold text-slate-300 mb-1">Data</label>
-                <input type="date" id="despesaData" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 mt-2">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Adicionar Despesa</span>
-            </button>
-          </form>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h2 class="text-base font-bold text-white mb-1">Cadastrar novo cartão</h2>
-          <p class="text-xs text-slate-400 mb-4">Gerencie os cartões de crédito vinculados</p>
-
-          <form id="formCartao" onsubmit="cadastrarCartao(event)" class="space-y-3">
             <div>
-              <label for="cartaoNome" class="block text-xs uppercase font-bold text-slate-300 mb-1">Nome do Cartão</label>
-              <input type="text" id="cartaoNome" placeholder="Ex: Nubank, Itaú..." required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
+              <label class="block text-xs uppercase font-bold text-slate-300 mb-1">Vencimento</label>
+              <input type="number" min="1" max="31" id="cartaoVencimento" placeholder="10" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
             </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="cartaoLimite" class="block text-xs uppercase font-bold text-slate-300 mb-1">Limite (R$)</label>
-                <input type="number" step="0.01" id="cartaoLimite" placeholder="0,00" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
-              </div>
-              <div>
-                <label for="cartaoVencimento" class="block text-xs uppercase font-bold text-slate-300 mb-1">Dia do Vencimento</label>
-                <input type="number" min="1" max="31" id="cartaoVencimento" placeholder="Ex: 10" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100">
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-xs border border-slate-700 transition-all flex items-center justify-center space-x-1.5 mt-2">
-              <i data-lucide="credit-card" class="w-4 h-4"></i>
-              <span>Salvar Cartão</span>
-            </button>
-          </form>
-        </div>
-
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all">Salvar Cartão</button>
+        </form>
       </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
-        <h2 class="text-base font-bold text-white mb-1">Extrato do mês</h2>
-        <p class="text-xs text-slate-400 mb-4">Lista detalhada de saídas registradas no mês selecionado</p>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
-              <tr>
-                <th class="p-3">Descrição</th>
-                <th class="p-3">Data</th>
-                <th class="p-3">Valor</th>
-                <th class="p-3 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaExtrato" class="divide-y divide-slate-800/60">
-              </tbody>
-          </table>
-        </div>
-      </div>
-
     </section>
 
   </main>
@@ -269,252 +89,49 @@
   <script>
     lucide.createIcons();
 
-    // DADOS GLOBAIS LOCAIS (INTEGRAÇÃO COM BACKEND)
-    let estadoFinanceiro = {
-      salarioFixo: 0.00,
-      rendaExtra: 0.00,
-      saidasDoMes: 0.00
-    };
-
-    // ALTERAÇÃO DE ABAS
     function switchTab(tab) {
-      const tabDash = document.getElementById('tabDashboard');
-      const tabCards = document.getElementById('tabCards');
       const secDash = document.getElementById('sectionDashboard');
       const secCards = document.getElementById('sectionCards');
+      const tabDash = document.getElementById('tabDashboard');
+      const tabCards = document.getElementById('tabCards');
 
       if (tab === 'dashboard') {
-        tabDash.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
-        tabCards.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
         secDash.classList.remove('hidden');
         secCards.classList.add('hidden');
+        tabDash.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
+        tabCards.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
       } else {
-        tabCards.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
-        tabDash.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
         secCards.classList.remove('hidden');
         secDash.classList.add('hidden');
+        tabCards.className = "py-3 px-1 border-b-2 border-indigo-500 text-indigo-400 font-semibold text-xs sm:text-sm flex items-center space-x-2";
+        tabDash.className = "py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-xs sm:text-sm flex items-center space-x-2";
       }
     }
 
-    // FORMATAÇÃO DE MOEDA BRL
-    function formatarBRL(valor) {
-      return (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-
-    // GRÁFICO DE ROSCA
-    let proporcaoChart;
-    function atualizarGrafico(salario, extra, saidas) {
-      const canvas = document.getElementById('proporcaoChart');
-      const emptyState = document.getElementById('chartEmptyState');
-      const totalMovimentado = salario + extra + saidas;
-
-      if (totalMovimentado === 0) {
-        canvas.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      canvas.classList.remove('hidden');
-      emptyState.classList.add('hidden');
-
-      const ctx = canvas.getContext('2d');
-
-      if (proporcaoChart) {
-        proporcaoChart.destroy();
-      }
-
-      proporcaoChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Salário Fixo', 'Renda Extra', 'Saídas do Mês'],
-          datasets: [{
-            data: [salario, extra, saidas],
-            backgroundColor: [
-              '#10b981', // Verde
-              '#3b82f6', // Azul
-              '#f43f5e'  // Rosa/Vermelho
-            ],
-            borderColor: '#0b0f19',
-            borderWidth: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: '#94a3b8',
-                font: { size: 11 },
-                padding: 16
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.raw || 0;
-                  return ` ${label}: ${formatarBRL(value)}`;
-                }
-              }
-            }
-          },
-          cutout: '70%'
-        }
-      });
-    }
-
-    // ATUALIZAR INTERFACE
-    function renderizarResumo() {
-      const rendaTotal = estadoFinanceiro.salarioFixo + estadoFinanceiro.rendaExtra;
-      const saldoLivre = rendaTotal - estadoFinanceiro.saidasDoMes;
-
-      document.getElementById('valRendaTotal').textContent = formatarBRL(rendaTotal);
-      document.getElementById('valSaidasTotal').textContent = formatarBRL(estadoFinanceiro.saidasDoMes);
-      document.getElementById('valSaldoLivre').textContent = formatarBRL(saldoLivre);
-
-      atualizarGrafico(
-        estadoFinanceiro.salarioFixo,
-        estadoFinanceiro.rendaExtra,
-        estadoFinanceiro.saidasDoMes
-      );
-    }
-
-    // CARREGAR DADOS AO MUDAR MÊS (INTEGRAR COM SEU FETCH / APP.PY)
-    function carregarDadosDoMes() {
-      const mes = document.getElementById('monthSelect').value;
-      
-      // EXEMPLO DE RECUPERAÇÃO / ATUALIZAÇÃO
-      // No seu fluxo real, aqui é chamado o endpoint com o mês selecionado
-      renderizarResumo();
-    }
-
-    // SALVAR RENDAS
-    function salvarRendas(e) {
-      e.preventDefault();
-      const salario = parseFloat(document.getElementById('inputSalarioFixo').value) || 0;
-      const extra = parseFloat(document.getElementById('inputRendaExtra').value) || 0;
-
-      estadoFinanceiro.salarioFixo = salario;
-      estadoFinanceiro.rendaExtra = extra;
-
-      renderizarResumo();
-    }
-
-    // INICIALIZAÇÃO
-    document.addEventListener('DOMContentLoaded', () => {
-      renderizarResumo();
-    });
-  // ... [outras funções anteriores, como renderizarResumo, etc.] ...
-
-    // -------------------------------------------------------------
-    // COLE A FUNÇÃO CADASTRARCARTAO AQUI (Por volta das últimas linhas do script):
-    // -------------------------------------------------------------
     async function cadastrarCartao(e) {
-      // Impede que a página recarregue e zere a tela
       e.preventDefault();
-
       const nome = document.getElementById('cartaoNome').value.trim();
       const limite = parseFloat(document.getElementById('cartaoLimite').value) || 0;
       const diaVencimento = parseInt(document.getElementById('cartaoVencimento').value) || 1;
 
-      if (!nome || limite <= 0) {
-        alert("Por favor, preencha o nome do cartão e um limite válido.");
-        return;
-      }
-
       try {
         const response = await fetch('/cadastrar_cartao', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            nome: nome,
-            limite: limite,
-            dia_vencimento: diaVencimento
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, limite, dia_vencimento })
         });
-
         const data = await response.json();
 
         if (response.ok && data.status === 'sucesso') {
           document.getElementById('formCartao').reset();
-          if (typeof carregarDadosDoMes === 'function') {
-            carregarDadosDoMes();
-          }
           alert("Cartão cadastrado com sucesso!");
         } else {
           alert(data.mensagem || "Erro ao cadastrar cartão.");
         }
-      } catch (error) {
-        console.error("Erro na requisição:", error);
+      } catch (err) {
         alert("Erro ao conectar com o servidor.");
       }
     }
-
-    // INICIALIZAÇÃO AO CARREGAR A PÁGINA
-    document.addEventListener('DOMContentLoaded', () => {
-      renderizarResumo();
-    });
-    // ... [outras funções anteriores, como renderizarResumo, etc.] ...
-
-    // -------------------------------------------------------------
-    // COLE A FUNÇÃO CADASTRARCARTAO AQUI (Por volta das últimas linhas do script):
-    // -------------------------------------------------------------
-    async function cadastrarCartao(e) {
-      // Impede que a página recarregue e zere a tela
-      e.preventDefault();
-
-      const nome = document.getElementById('cartaoNome').value.trim();
-      const limite = parseFloat(document.getElementById('cartaoLimite').value) || 0;
-      const diaVencimento = parseInt(document.getElementById('cartaoVencimento').value) || 1;
-
-      if (!nome || limite <= 0) {
-        alert("Por favor, preencha o nome do cartão e um limite válido.");
-        return;
-      }
-
-      try {
-        const response = await fetch('/cadastrar_cartao', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            nome: nome,
-            limite: limite,
-            dia_vencimento: diaVencimento
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.status === 'sucesso') {
-          document.getElementById('formCartao').reset();
-          if (typeof carregarDadosDoMes === 'function') {
-            carregarDadosDoMes();
-          }
-          alert("Cartão cadastrado com sucesso!");
-        } else {
-          alert(data.mensagem || "Erro ao cadastrar cartão.");
-        }
-      } catch (error) {
-        console.error("Erro na requisição:", error);
-        alert("Erro ao conectar com o servidor.");
-      }
-    }
-
-    // INICIALIZAÇÃO AO CARREGAR A PÁGINA
-    document.addEventListener('DOMContentLoaded', () => {
-      renderizarResumo();
-    });
   </script>
-</body>
-</html>
-  </script>
-</body>
-</html>
 </body>
 </html>
