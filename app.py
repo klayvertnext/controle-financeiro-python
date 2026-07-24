@@ -65,7 +65,7 @@ class Cartao(db.Model):
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
 
-# Inicialização global das tabelas
+# Inicialização segura das tabelas
 with app.app_context():
     db.create_all()
 
@@ -81,13 +81,20 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Garante que a tabela existe antes de consultar
     with app.app_context():
         db.create_all()
 
     if request.method == 'POST':
-        email = request.form.get('email').strip().lower()
-        senha = request.form.get('senha')
+        # Tratamento seguro com valor padrão para evitar AttributeError em NoneType
+        email_raw = request.form.get('email', '')
+        senha_raw = request.form.get('senha', '')
+        
+        email = email_raw.strip().lower() if email_raw else ''
+        senha = senha_raw.strip() if senha_raw else ''
+
+        # Validação amigável
+        if not email or not senha:
+            return render_template('login.html', erro="Preencha todos os campos obrigatórios.")
 
         try:
             user = Usuario.query.filter_by(email=email).first()
@@ -97,20 +104,28 @@ def login():
                 return redirect(url_for('dashboard'))
             return render_template('login.html', erro="E-mail ou senha incorretos.")
         except Exception as e:
-            return render_template('login.html', erro=f"Erro de conexão com o banco: {str(e)}")
+            return render_template('login.html', erro="Ocorreu um erro ao processar o login. Tente novamente.")
     
     return render_template('login.html')
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
-    # Garante que a tabela existe antes de cadastrar
     with app.app_context():
         db.create_all()
 
     if request.method == 'POST':
-        nome = request.form.get('nome').strip()
-        email = request.form.get('email').strip().lower()
-        senha = request.form.get('senha')
+        # Tratamento seguro para prevenir qualquer Erro 500 porcampos nulos (None)
+        nome_raw = request.form.get('nome', '')
+        email_raw = request.form.get('email', '')
+        senha_raw = request.form.get('senha', '')
+
+        nome = nome_raw.strip() if nome_raw else ''
+        email = email_raw.strip().lower() if email_raw else ''
+        senha = senha_raw.strip() if senha_raw else ''
+
+        # Validação robusta de campos obrigatórios
+        if not nome or not email or not senha:
+            return render_template('cadastro.html', erro="Preencha todos os campos obrigatórios.")
 
         try:
             user_exist = Usuario.query.filter_by(email=email).first()
@@ -130,7 +145,7 @@ def cadastro():
             return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
-            return render_template('cadastro.html', erro=f"Erro ao cadastrar: {str(e)}")
+            return render_template('cadastro.html', erro="Ocorreu um erro interno ao realizar o cadastro. Tente novamente.")
     
     return render_template('cadastro.html')
 
@@ -156,6 +171,8 @@ def obter_dados():
 
     user_id = session['usuario_id']
     user = Usuario.query.get(user_id)
+    if not user:
+        return jsonify({'status': 'erro', 'mensagem': 'Utilizador não encontrado'}), 404
 
     rendas_dict = {}
     for r in user.rendas:
@@ -233,14 +250,14 @@ def salvar_dados_completo():
             nova_despesa = Despesa(
                 usuario_id=user_id,
                 id_unico=int(d.get('idUnico')),
-                descricao=d.get('descricao'),
+                descricao=str(d.get('descricao', '')).strip(),
                 valor_parcela=float(d.get('valorParcela', 0)),
-                data_compra=d.get('dataCompra'),
-                tipo=d.get('tipo'),
-                cartao=d.get('cartao', '-'),
+                data_compra=str(d.get('dataCompra', '')).strip(),
+                tipo=str(d.get('tipo', '')).strip(),
+                cartao=str(d.get('cartao', '-')).strip(),
                 parcela_atual=int(d.get('parcelaAtual', 1)),
                 total_parcelas=int(d.get('totalParcelas', 1)),
-                mes_referencia=d.get('mesReferencia'),
+                mes_referencia=str(d.get('mesReferencia', '')).strip(),
                 pago=bool(d.get('pago', False))
             )
             db.session.add(nova_despesa)
@@ -257,13 +274,17 @@ def cadastrar_cartao():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
 
     user_id = session['usuario_id']
-    data = request.get_json()
+    data = request.get_json() or {}
 
     try:
+        nome_cartao = str(data.get('nome', '')).strip()
+        if not nome_cartao:
+            return jsonify({'status': 'erro', 'mensagem': 'O nome do cartão é obrigatório'}), 400
+
         novo_c = Cartao(
             usuario_id=user_id,
             cartao_id_ext=str(data.get('id', 'c_' + str(os.urandom(4).hex()))),
-            nome=data.get('nome').strip(),
+            nome=nome_cartao,
             limite=float(data.get('limite', 0)),
             dia_vencimento=int(data.get('dia_vencimento', 1))
         )
@@ -280,17 +301,17 @@ def editar_cartao():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
 
     user_id = session['usuario_id']
-    data = request.get_json()
-    cartao_id = str(data.get('id'))
+    data = request.get_json() or {}
+    cartao_id = str(data.get('id', ''))
 
     c = Cartao.query.filter_by(usuario_id=user_id, cartao_id_ext=cartao_id).first()
     if not c:
         return jsonify({'status': 'erro', 'mensagem': 'Cartão não encontrado'}), 404
 
     try:
-        c.nome = data.get('nome').strip()
-        c.limite = float(data.get('limite', 0))
-        c.dia_vencimento = int(data.get('dia_vencimento', 1))
+        c.nome = str(data.get('nome', c.nome)).strip()
+        c.limite = float(data.get('limite', c.limite))
+        c.dia_vencimento = int(data.get('dia_vencimento', c.dia_vencimento))
         db.session.commit()
         return jsonify({'status': 'sucesso'})
     except Exception as e:
@@ -303,8 +324,8 @@ def excluir_cartao():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
 
     user_id = session['usuario_id']
-    data = request.get_json()
-    cartao_id = str(data.get('id'))
+    data = request.get_json() or {}
+    cartao_id = str(data.get('id', ''))
 
     c = Cartao.query.filter_by(usuario_id=user_id, cartao_id_ext=cartao_id).first()
     if c:
