@@ -6,15 +6,9 @@ import os
 app = Flask(__name__)
 app.secret_key = 'k_financeiro_secret_key_super_seguro'
 
-# Configuração do Banco de Dados SQLite para o Render/Local
+# Configuração do Banco de Dados SQLite
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Se estiver no Render, usa a pasta /tmp para evitar erros de permissão
-if 'RENDER' in os.environ:
-    db_path = '/tmp/database.db'
-else:
-    db_path = os.path.join(basedir, 'database.db')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -66,6 +60,7 @@ class Cartao(db.Model):
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
 
+# Criação automática das tabelas ao iniciar a aplicação
 with app.app_context():
     db.create_all()
 
@@ -211,7 +206,7 @@ def salvar_dados_completo():
                 )
                 db.session.add(nova_renda)
 
-        # Sincronizar Despesas (Substituição inteligente do histórico do usuário)
+        # Sincronizar Despesas
         Despesa.query.filter_by(usuario_id=user_id).delete()
         despesas_data = req_data.get('despesas', [])
         for d in despesas_data:
