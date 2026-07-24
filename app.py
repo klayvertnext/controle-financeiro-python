@@ -18,11 +18,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Garante a criação imediata das tabelas no contexto correto
-with app.app_context():
-    db.create_all()
-    print("Banco de dados SQLite inicializado com sucesso em:", db_path)
-
 # ==========================================
 # MODELOS DO BANCO DE DADOS
 # ==========================================
@@ -73,6 +68,7 @@ class Cartao(db.Model):
 # Criação automática das tabelas ao iniciar a aplicação
 with app.app_context():
     db.create_all()
+    print("Banco de dados SQLite inicializado com sucesso em:", db_path)
 
 # ==========================================
 # ROTAS DE AUTENTICAÇÃO
@@ -95,6 +91,7 @@ def login():
             session['usuario_id'] = user.id
             session['usuario_nome'] = user.nome
             return redirect(url_for('dashboard'))
+        
         return render_template('login.html', erro="E-mail ou senha incorretos.")
     
     return render_template('login.html')
