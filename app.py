@@ -65,10 +65,9 @@ class Cartao(db.Model):
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
 
-# Criação automática e segura das tabelas ao iniciar a aplicação
+# Inicialização global das tabelas
 with app.app_context():
     db.create_all()
-    print("Banco de dados SQLite inicializado com sucesso em:", db_path)
 
 # ==========================================
 # ROTAS DE AUTENTICAÇÃO
@@ -82,22 +81,32 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Garante que a tabela existe antes de consultar
+    with app.app_context():
+        db.create_all()
+
     if request.method == 'POST':
         email = request.form.get('email').strip().lower()
         senha = request.form.get('senha')
 
-        user = Usuario.query.filter_by(email=email).first()
-        if user and check_password_hash(user.senha, senha):
-            session['usuario_id'] = user.id
-            session['usuario_nome'] = user.nome
-            return redirect(url_for('dashboard'))
-        
-        return render_template('login.html', erro="E-mail ou senha incorretos.")
+        try:
+            user = Usuario.query.filter_by(email=email).first()
+            if user and check_password_hash(user.senha, senha):
+                session['usuario_id'] = user.id
+                session['usuario_nome'] = user.nome
+                return redirect(url_for('dashboard'))
+            return render_template('login.html', erro="E-mail ou senha incorretos.")
+        except Exception as e:
+            return render_template('login.html', erro=f"Erro de conexão com o banco: {str(e)}")
     
     return render_template('login.html')
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
+    # Garante que a tabela existe antes de cadastrar
+    with app.app_context():
+        db.create_all()
+
     if request.method == 'POST':
         nome = request.form.get('nome').strip()
         email = request.form.get('email').strip().lower()
