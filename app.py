@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 app.secret_key = 'k_financeiro_secret_key_super_seguro'
 
-# Configuração robusta para o Render (/tmp) e local
+# Configuração robusta do SQLite para o Render (/tmp) e ambiente local
 if 'RENDER' in os.environ:
     db_path = '/tmp/database.db'
 else:
@@ -65,7 +65,7 @@ class Cartao(db.Model):
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
 
-# Criação automática das tabelas ao iniciar a aplicação
+# Criação automática e segura das tabelas ao iniciar a aplicação
 with app.app_context():
     db.create_all()
     print("Banco de dados SQLite inicializado com sucesso em:", db_path)
@@ -103,21 +103,25 @@ def cadastro():
         email = request.form.get('email').strip().lower()
         senha = request.form.get('senha')
 
-        user_exist = Usuario.query.filter_by(email=email).first()
-        if user_exist:
-            return render_template('cadastro.html', erro="Este e-mail já está cadastrado.")
+        try:
+            user_exist = Usuario.query.filter_by(email=email).first()
+            if user_exist:
+                return render_template('cadastro.html', erro="Este e-mail já está cadastrado.")
 
-        novo_usuario = Usuario(
-            nome=nome,
-            email=email,
-            senha=generate_password_hash(senha)
-        )
-        db.session.add(novo_usuario)
-        db.session.commit()
+            novo_usuario = Usuario(
+                nome=nome,
+                email=email,
+                senha=generate_password_hash(senha)
+            )
+            db.session.add(novo_usuario)
+            db.session.commit()
 
-        session['usuario_id'] = novo_usuario.id
-        session['usuario_nome'] = novo_usuario.nome
-        return redirect(url_for('dashboard'))
+            session['usuario_id'] = novo_usuario.id
+            session['usuario_nome'] = novo_usuario.nome
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            return render_template('cadastro.html', erro=f"Erro ao cadastrar: {str(e)}")
     
     return render_template('cadastro.html')
 
