@@ -6,12 +6,22 @@ import os
 app = Flask(__name__)
 app.secret_key = 'k_financeiro_secret_key_super_seguro'
 
-# Configuração do Banco de Dados SQLite
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+# Configuração robusta para o Render (/tmp) e local
+if 'RENDER' in os.environ:
+    db_path = '/tmp/database.db'
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(basedir, 'database.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+# Garante a criação imediata das tabelas no contexto correto
+with app.app_context():
+    db.create_all()
+    print("Banco de dados SQLite inicializado com sucesso em:", db_path)
 
 # ==========================================
 # MODELOS DO BANCO DE DADOS
