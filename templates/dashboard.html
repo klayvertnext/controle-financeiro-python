@@ -406,6 +406,115 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderizarResumo();
     });
+  // ... [outras funções anteriores, como renderizarResumo, etc.] ...
+
+    // -------------------------------------------------------------
+    // COLE A FUNÇÃO CADASTRARCARTAO AQUI (Por volta das últimas linhas do script):
+    // -------------------------------------------------------------
+    async function cadastrarCartao(e) {
+      // Impede que a página recarregue e zere a tela
+      e.preventDefault();
+
+      const nome = document.getElementById('cartaoNome').value.trim();
+      const limite = parseFloat(document.getElementById('cartaoLimite').value) || 0;
+      const diaVencimento = parseInt(document.getElementById('cartaoVencimento').value) || 1;
+
+      if (!nome || limite <= 0) {
+        alert("Por favor, preencha o nome do cartão e um limite válido.");
+        return;
+      }
+
+      try {
+        const response = await fetch('/cadastrar_cartao', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nome: nome,
+            limite: limite,
+            dia_vencimento: diaVencimento
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'sucesso') {
+          document.getElementById('formCartao').reset();
+          if (typeof carregarDadosDoMes === 'function') {
+            carregarDadosDoMes();
+          }
+          alert("Cartão cadastrado com sucesso!");
+        } else {
+          alert(data.mensagem || "Erro ao cadastrar cartão.");
+        }
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        alert("Erro ao conectar com o servidor.");
+      }
+    }
+
+    // INICIALIZAÇÃO AO CARREGAR A PÁGINA
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarResumo();
+    });
+    // ... [outras funções anteriores, como renderizarResumo, etc.] ...
+
+    // -------------------------------------------------------------
+    // COLE A FUNÇÃO CADASTRARCARTAO AQUI (Por volta das últimas linhas do script):
+    // -------------------------------------------------------------
+    async function cadastrarCartao(e) {
+      // Impede que a página recarregue e zere a tela
+      e.preventDefault();
+
+      const nome = document.getElementById('cartaoNome').value.trim();
+      const limite = parseFloat(document.getElementById('cartaoLimite').value) || 0;
+      const diaVencimento = parseInt(document.getElementById('cartaoVencimento').value) || 1;
+
+      if (!nome || limite <= 0) {
+        alert("Por favor, preencha o nome do cartão e um limite válido.");
+        return;
+      }
+
+      try {
+        const response = await fetch('/cadastrar_cartao', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nome: nome,
+            limite: limite,
+            dia_vencimento: diaVencimento
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'sucesso') {
+          document.getElementById('formCartao').reset();
+          if (typeof carregarDadosDoMes === 'function') {
+            carregarDadosDoMes();
+          }
+          alert("Cartão cadastrado com sucesso!");
+        } else {
+          alert(data.mensagem || "Erro ao cadastrar cartão.");
+        }
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        alert("Erro ao conectar com o servidor.");
+      }
+    }
+
+    // INICIALIZAÇÃO AO CARREGAR A PÁGINA
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarResumo();
+    });
   </script>
+</body>
+</html>
+  </script>
+</body>
+</html>
 </body>
 </html>
