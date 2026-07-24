@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K$ - Controle Financeiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        slateBg: '#090D16',
+                        cardBg: 'rgba(21, 29, 46, 0.7)',
+                        cardBorder: 'rgba(255, 255, 255, 0.08)',
+                        brandPrimary: '#6366F1',
+                        brandGreen: '#10B981',
+                        brandRed: '#F43F5E',
+                        brandCyan: '#06B6D4'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(19, 27, 44, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-green { box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3); }
+        .glow-red { box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.3); }
+        .glow-primary { box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.35); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #090D16; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="bg-slateBg text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brandPrimary selection:text-white pb-20">
+
+    <header class="glass sticky top-0 z-30 px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-indigo-500/30">
+                K$
+            </div>
+            <div>
+                <h1 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Painel Financeiro</h1>
+                <p class="text-sm font-bold text-white flex items-center gap-1.5">
+                    Olá, <span id="username-display" class="text-indigo-400 font-extrabold">{{ usuario }}</span> 👋
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center bg-slate-900/90 border border-slate-700/70 rounded-xl px-3.5 py-2 space-x-2.5 shadow-inner">
+            <span class="text-base">📅</span>
+            <div class="flex flex-col">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Mês de Visão</span>
+                <input type="month" id="seletor-mes" onchange="carregarDados()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+            </div>
+        </div>
+
+        <a href="/logout" class="bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 text-slate-300 px-4 py-2 rounded-xl font-bold text-xs transition duration-200 shadow flex items-center gap-2">
+            <span>Sair</span> 🚪
+        </a>
+    </header>
+
+    <div class="flex justify-center mt-6 px-4">
+        <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex space-x-2 shadow-2xl">
+            <button id="btn-tab-dashboard" onclick="trocarAba('dashboard')" class="px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 flex items-center gap-2">
+                <span>📊</span> Dashboard & Rendas
+            </button>
+            <button id="btn-tab-cartoes" onclick="trocarAba('cartoes')" class="px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 text-slate-400 hover:text-white flex items-center gap-2">
+                <span>💳</span> Cartões & Saídas
+            </button>
+        </div>
+    </div>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <div id="aba-dashboard" class="space-y-6 transition-all">
+            
+            <div class="glass rounded-3xl p-6 shadow-2xl space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                    💵 Suas Fontes de Renda
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">💼 Salário Fixo (R$)</label>
+                        <input type="number" step="0.01" id="salario" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-white font-semibold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">🚀 Renda Extra / Freelance (R$)</label>
+                        <input type="number" step="0.01" id="renda_extra" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-white font-semibold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+                    <button onclick="salvarRendas()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-bold px-6 py-2.5 rounded-xl text-xs text-white shadow-lg shadow-indigo-500/20 transition hover:scale-[1.02]">
+                        ✓ Atualizar Rendas
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="glass rounded-3xl p-5 shadow-xl border-l-4 border-emerald-500 glow-green relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Renda Total</p>
+                            <p id="card-renda-total" class="text-2xl font-black text-emerald-400 mt-2">R$ 0,00</p>
+                        </div>
+                        <span class="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400 text-xl">💰</span>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-5 shadow-xl border-l-4 border-rose-500 glow-red relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saídas do Mês</p>
+                            <p id="card-total-saidas-mes" class="text-2xl font-black text-rose-400 mt-2">R$ 0,00</p>
+                        </div>
+                        <span class="p-3 bg-rose-500/10 rounded-2xl text-rose-400 text-xl">💸</span>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-5 shadow-xl border-l-4 border-indigo-500 glow-primary relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Livre Estimado</p>
+                            <p id="card-saldo-livre" class="text-2xl font-black text-indigo-300 mt-2">R$ 0,00</p>
+                        </div>
+                        <span class="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 text-xl">⚖️</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-6 shadow-2xl flex flex-col items-center">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">Proporção Financeira do Mês</h3>
+                <div class="w-64 h-64 relative">
+                    <canvas id="graficoRosca"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="aba-cartoes" class="hidden space-y-6 transition-all">
+            
+            <div id="container-resumo-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 glass rounded-3xl p-6 shadow-2xl space-y-5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2">
+                        ➕ Novo Lançamento de Despesa
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">📅 Data do Gasto</label>
+                            <input type="date" id="saida-data" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tipo de Pagamento</label>
+                            <select id="saida-tipo" onchange="alterarTipoPagamento()" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                                <option value="Débito / Pix">Débito / Pix</option>
+                                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                <option value="Boleto">Boleto</option>
+                                <option value="Empréstimo">Empréstimo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Descrição / Local</label>
+                            <input type="text" id="saida-descricao" placeholder="ex: Mercado, Fatura Internet" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Valor Total (R$)</label>
+                            <input type="number" step="0.01" id="saida-valor" placeholder="0.00" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Cartão Utilizado</label>
+                            <select id="saida-cartao" disabled class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed focus:outline-none">
+                                <option value="Nenhum">Nenhum</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Parcelas</label>
+                            <select id="saida-parcelas" disabled class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed focus:outline-none">
+                                <option value="1">À vista (1x)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="registrarSaida()" class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-rose-500/20 hover:scale-[1.01]">
+                        ➕ Confirmar Registro
+                    </button>
+                </div>
+
+                <div class="glass rounded-3xl p-6 shadow-2xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 mb-4">
+                            💳 Novo Cartão
+                        </h3>
+                        <div class="space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Nome do Banco / Cartão</label>
+                                <input type="text" id="cartao-nome" placeholder="ex: Nubank, Inter" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Limite Total (R$)</label>
+                                <input type="number" step="0.01" id="cartao-limite" placeholder="ex: 2000" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Dia do Vencimento</label>
+                                <input type="number" min="1" max="31" id="cartao-vencimento" placeholder="ex: 10" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="adicionarCartao()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 hover:text-cyan-300 font-bold py-2.5 rounded-xl text-xs transition shadow mt-4">
+                        + Cadastrar Cartão
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-6 shadow-2xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        📄 Extrato do Mês Selecionado
+                    </h3>
+                    <span id="label-mes-extrato" class="text-xs font-extrabold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20"></span>
+                </div>
+                <div id="lista-extrato" class="space-y-2.5"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <button onclick="abrirModalEdicao()" title="Gerenciar & Editar Cartões" class="fixed bottom-6 right-6 bg-gradient-to-tr from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-2xl shadow-indigo-500/50 transition hover:scale-110 border border-white/20 z-40">
+        ⚙️
+    </button>
+
+    <div id="modal-editar-cartao" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 border border-slate-700">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">⚙️ Configurações do Cartão</h3>
+                <button onclick="fecharModalEdicao()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <div class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Selecione o Cartão:</label>
+                    <select id="modal-select-cartao" onchange="carregarDadosCartaoNoModal()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nome do Cartão:</label>
+                    <input type="text" id="modal-cartao-nome" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Novo Limite (R$):</label>
+                    <input type="number" step="0.01" id="modal-cartao-limite" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Dia de Vencimento:</label>
+                    <input type="number" min="1" max="31" id="modal-cartao-vencimento" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="fecharModalEdicao()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold">Cancelar</button>
+                <button onclick="salvarEdicaoCartao()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let meugrafico = null;
+        let dadosAtuais = { salario: 0, renda_extra: 0, cartoes: [], saidas: [] };
+
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+        const diaAtual = String(hoje.getDate()).padStart(2, '0');
+        
+        document.getElementById('seletor-mes').value = `${anoAtual}-${mesAtual}`;
+        document.getElementById('saida-data').value = `${anoAtual}-${mesAtual}-${diaAtual}`;
+
+        function trocarAba(aba) {
+            const tabDash = document.getElementById('aba-dashboard');
+            const tabCartoes = document.getElementById('aba-cartoes');
+            const btnDash = document.getElementById('btn-tab-dashboard');
+            const btnCartoes = document.getElementById('btn-tab-cartoes');
+
+            if (aba === 'dashboard') {
+                tabDash.classList.remove('hidden');
+                tabCartoes.classList.add('hidden');
+                btnDash.className = "px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 flex items-center gap-2";
+                btnCartoes.className = "px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 text-slate-400 hover:text-white flex items-center gap-2";
+            } else {
+                tabDash.classList.add('hidden');
+                tabCartoes.classList.remove('hidden');
+                btnCartoes.className = "px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 flex items-center gap-2";
+                btnDash.className = "px-6 py-2.5 rounded-xl text-xs font-bold transition duration-200 text-slate-400 hover:text-white flex items-center gap-2";
+            }
+        }
+
+        function alterarTipoPagamento() {
+            const tipo = document.getElementById('saida-tipo').value;
+            const selectCartao = document.getElementById('saida-cartao');
+            const selectParcelas = document.getElementById('saida-parcelas');
+
+            if (tipo === 'Débito / Pix') {
+                selectCartao.disabled = true;
+                selectCartao.className = "w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed focus:outline-none";
+
+                selectParcelas.disabled = true;
+                selectParcelas.className = "w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed focus:outline-none";
+                selectParcelas.innerHTML = '<option value="1">À vista (1x)</option>';
+            } else {
+                if (tipo === 'Cartão de Crédito') {
+                    selectCartao.disabled = false;
+                    selectCartao.className = "w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none";
+                } else {
+                    selectCartao.disabled = true;
+                    selectCartao.className = "w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed focus:outline-none";
+                }
+
+                selectParcelas.disabled = false;
+                selectParcelas.className = "w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none";
+                
+                selectParcelas.innerHTML = '';
+                for (let i = 1; i <= 24; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.innerText = i === 1 ? 'À vista (1x)' : `${i}x parcelas`;
+                    selectParcelas.appendChild(opt);
+                }
+            }
+        }
+
+        async function carregarDados() {
+            try {
+                const res = await fetch('/api/dados');
+                if (res.ok) {
+                    dadosAtuais = await res.json();
+                    
+                    document.getElementById('salario').value = dadosAtuais.salario || 0;
+                    document.getElementById('renda_extra').value = dadosAtuais.renda_extra || 0;
+
+                    atualizarResumo();
+                    atualizarOpcoesCartao();
+                    renderizarCardsCartoes();
+                    renderizarExtrato();
+                }
+            } catch (e) {
+                console.error("Erro ao carregar dados:", e);
+            }
+        }
+
+        function obterSaidasDoMesSelecionado() {
+            const mesSel = document.getElementById('seletor-mes').value;
+            return (dadosAtuais.saidas || []).map((s, idx) => ({ ...s, indexOriginal: idx }))
+                .filter(s => s.mes_referencia === mesSel);
+        }
+
+        function atualizarResumo() {
+            const salario = parseFloat(document.getElementById('salario').value) || 0;
+            const rendaExtra = parseFloat(document.getElementById('renda_extra').value) || 0;
+            const rendaTotal = salario + rendaExtra;
+
+            const saidasMes = obterSaidasDoMesSelecionado();
+            let totalSaidasMes = 0;
+            saidasMes.forEach(s => {
+                totalSaidasMes += parseFloat(s.valor_parcela || 0);
+            });
+
+            const saldoLivre = rendaTotal - totalSaidasMes;
+
+            document.getElementById('card-renda-total').innerText = `R$ ${rendaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('card-total-saidas-mes').innerText = `R$ ${totalSaidasMes.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('card-saldo-livre').innerText = `R$ ${saldoLivre.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+
+            atualizarGrafico(salario, rendaExtra, totalSaidasMes);
+        }
+
+        function atualizarGrafico(salario, rendaExtra, totalSaidasMes) {
+            const ctx = document.getElementById('graficoRosca').getContext('2d');
+            if (meugrafico) meugrafico.destroy();
+
+            meugrafico = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Salário', 'Renda Extra', 'Saídas do Mês'],
+                    datasets: [{
+                        data: [salario, rendaExtra, totalSaidasMes],
+                        backgroundColor: ['#10B981', '#06B6D4', '#F43F5E'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: '#94A3B8', font: { size: 11, family: 'Plus Jakarta Sans' }, padding: 15 } 
+                        }
+                    },
+                    cutout: '75%'
+                }
+            });
+        }
+
+        async function salvarRendas() {
+            const salario = parseFloat(document.getElementById('salario').value) || 0;
+            const renda_extra = parseFloat(document.getElementById('renda_extra').value) || 0;
+
+            await fetch('/api/salvar_rendas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ salario, renda_extra })
+            });
+
+            carregarDados();
+        }
+
+        function renderizarCardsCartoes() {
+            const container = document.getElementById('container-resumo-cartoes');
+            container.innerHTML = '';
+
+            const cartoes = dadosAtuais.cartoes || [];
+            if (cartoes.length === 0) return;
+
+            const mesSel = document.getElementById('seletor-mes').value;
+
+            cartoes.forEach(c => {
+                let faturaMes = 0;
+                let comprometidoGeral = 0;
+
+                (dadosAtuais.saidas || []).forEach(s => {
+                    if (s.cartao && s.cartao.trim().toLowerCase() === c.nome.trim().toLowerCase() && s.tipo === 'Cartão de Crédito') {
+                        comprometidoGeral += parseFloat(s.valor_parcela || 0);
+                        if (s.mes_referencia === mesSel) {
+                            faturaMes += parseFloat(s.valor_parcela || 0);
+                        }
+                    }
+                });
+
+                const limite = parseFloat(c.limite || 0);
+                const disponivel = limite - comprometidoGeral;
+                const percUsado = limite > 0 ? Math.min(100, Math.round((comprometidoGeral / limite) * 100)) : 0;
+
+                const card = document.createElement('div');
+                card.className = "glass rounded-3xl p-5 shadow-xl space-y-3 relative overflow-hidden";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-black text-white text-sm tracking-wide flex items-center gap-2">💳 ${c.nome}</span>
+                        <span class="text-[10px] bg-slate-800 text-slate-300 font-bold px-2.5 py-1 rounded-full border border-slate-700">Venc: dia ${c.vencimento || 1}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs border-t border-slate-800 pt-3">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Fatura (${mesSel}):</span>
+                            <span class="font-extrabold text-rose-400 text-sm">R$ ${faturaMes.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Limite Disp.:</span>
+                            <span class="font-extrabold text-emerald-400 text-sm">R$ ${disponivel.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+                            <span>Uso total do limite</span>
+                            <span>${percUsado}%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-gradient-to-r from-indigo-500 to-rose-500 h-full rounded-full" style="width: ${percUsado}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function atualizarOpcoesCartao() {
+            const select = document.getElementById('saida-cartao');
+            const cartoes = dadosAtuais.cartoes || [];
+            const valorAnterior = select.value;
+            
+            select.innerHTML = '';
+            if (cartoes.length === 0) {
+                select.innerHTML = '<option value="Nenhum">Nenhum Cartão Cadastrado</option>';
+                return;
+            }
+
+            cartoes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.nome;
+                opt.innerText = `${c.nome} (Lim: R$ ${c.limite})`;
+                select.appendChild(opt);
+            });
+
+            if (valorAnterior && cartoes.some(c => c.nome === valorAnterior)) {
+                select.value = valorAnterior;
+            }
+        }
+
+        async function adicionarCartao() {
+            const nome = document.getElementById('cartao-nome').value.trim();
+            const limite = parseFloat(document.getElementById('cartao-limite').value) || 0;
+            const vencimento = parseInt(document.getElementById('cartao-vencimento').value) || 10;
+
+            if (!nome) return alert('Digite o nome do cartão!');
+
+            const res = await fetch('/api/adicionar_cartao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, limite, vencimento })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                return alert(err.mensagem || 'Erro ao adicionar cartão.');
+            }
+
+            document.getElementById('cartao-nome').value = '';
+            document.getElementById('cartao-limite').value = '';
+            document.getElementById('cartao-vencimento').value = '';
+            await carregarDados();
+        }
+
+        async function registrarSaida() {
+            try {
+                const dataInput = document.getElementById('saida-data').value;
+                const tipo = document.getElementById('saida-tipo').value;
+                const descricao = document.getElementById('saida-descricao').value.trim();
+                const valor = parseFloat(document.getElementById('saida-valor').value) || 0;
+                const cartao = document.getElementById('saida-cartao').value;
+                const parcelas = parseInt(document.getElementById('saida-parcelas').value) || 1;
+
+                if (!descricao) return alert('Por favor, informe a descrição do gasto.');
+                if (valor <= 0) return alert('Por favor, informe um valor maior que zero.');
+
+                if (tipo === 'Cartão de Crédito') {
+                    if (!cartao || cartao === 'Nenhum' || (dadosAtuais.cartoes || []).length === 0) {
+                        return alert('Cadastre ou selecione um cartão de crédito primeiro!');
+                    }
+                }
+
+                const res = await fetch('/api/adicionar_saida', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: dataInput, tipo, descricao, valor, cartao, parcelas })
+                });
+
+                const resposta = await res.json();
+
+                if (!res.ok) {
+                    alert(resposta.mensagem || 'Erro ao registrar saída.');
+                    return;
+                }
+
+                document.getElementById('saida-descricao').value = '';
+                document.getElementById('saida-valor').value = '';
+                await carregarDados();
+            } catch (err) {
+                alert("Erro ao tentar salvar: " + err);
+            }
+        }
+
+        async function togglePago(indexOriginal) {
+            await fetch(`/api/toggle_pago_saida/${indexOriginal}`, { method: 'PUT' });
+            carregarDados();
+        }
+
+        async function removerSaida(indexOriginal) {
+            if (!confirm('Deseja excluir este registro de saída?')) return;
+            await fetch(`/api/remover_saida/${indexOriginal}`, { method: 'DELETE' });
+            carregarDados();
+        }
+
+        function renderizarExtrato() {
+            const lista = document.getElementById('lista-extrato');
+            const mesSel = document.getElementById('seletor-mes').value;
+            document.getElementById('label-mes-extrato').innerText = `Mês Ref: ${mesSel}`;
+            lista.innerHTML = '';
+
+            const saidasMes = obterSaidasDoMesSelecionado();
+
+            if (saidasMes.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum lançamento para este mês.</p>';
+                return;
+            }
+
+            saidasMes.forEach(s => {
+                const item = document.createElement('div');
+                const estaPago = s.pago || false;
+                const eDebitoPix = s.tipo === 'Débito / Pix';
+
+                item.className = `glass rounded-2xl p-3.5 flex items-center justify-between text-xs transition hover:border-slate-600 ${
+                    estaPago ? 'opacity-70 bg-slate-900/40' : ''
+                }`;
+
+                let iconeTipo = '💳';
+                let infoDetalhe = '';
+                if (s.tipo === 'Cartão de Crédito') {
+                    iconeTipo = '💳';
+                    infoDetalhe = `${s.cartao} • Parcela ${s.parcela_atual}/${s.total_parcelas}`;
+                } else if (s.tipo === 'Boleto') {
+                    iconeTipo = '📄';
+                    infoDetalhe = `Boleto • Parcela ${s.parcela_atual}/${s.total_parcelas}`;
+                } else if (s.tipo === 'Empréstimo') {
+                    iconeTipo = '🏦';
+                    infoDetalhe = `Empréstimo • Parcela ${s.parcela_atual}/${s.total_parcelas}`;
+                } else {
+                    iconeTipo = '⚡';
+                    infoDetalhe = `Débito / Pix (À vista)`;
+                }
+
+                let acaoCheckin = '';
+                if (!eDebitoPix) {
+                    acaoCheckin = `
+                        <button onclick="togglePago(${s.indexOriginal})" title="Marcar como Pago/Pendente" class="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs transition ${
+                            estaPago ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-800 text-slate-500 hover:text-white border border-slate-700'
+                        }">
+                            ${estaPago ? '✓' : ''}
+                        </button>
+                    `;
+                } else {
+                    acaoCheckin = `
+                        <span class="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold flex items-center justify-center text-xs" title="Pago no ato">✓</span>
+                    `;
+                }
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3.5">
+                        ${acaoCheckin}
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm ${estaPago ? 'line-through text-slate-400' : 'text-white'}">${s.descricao}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">(${s.data_compra || ''})</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                <span>${iconeTipo}</span>
+                                <span>${infoDetalhe}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-extrabold text-rose-400">R$ ${parseFloat(s.valor_parcela).toFixed(2)}</span>
+                        <button onclick="removerSaida(${s.indexOriginal})" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg transition hover:bg-rose-500/10">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                lista.appendChild(item);
+            });
+        }
+
+        function abrirModalEdicao() {
+            const modal = document.getElementById('modal-editar-cartao');
+            const select = document.getElementById('modal-select-cartao');
+
+            select.innerHTML = '';
+            const cartoes = dadosAtuais.cartoes || [];
+
+            if (cartoes.length === 0) {
+                return alert('Nenhum cartão cadastrado para editar.');
+            }
+
+            cartoes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.nome;
+                opt.innerText = c.nome;
+                select.appendChild(opt);
+            });
+
+            carregarDadosCartaoNoModal();
+            modal.classList.remove('hidden');
+        }
+
+        function fecharModalEdicao() {
+            document.getElementById('modal-editar-cartao').classList.add('hidden');
+        }
+
+        function carregarDadosCartaoNoModal() {
+            const nomeSelecionado = document.getElementById('modal-select-cartao').value;
+            const cartao = (dadosAtuais.cartoes || []).find(c => c.nome === nomeSelecionado);
+
+            if (cartao) {
+                document.getElementById('modal-cartao-nome').value = cartao.nome;
+                document.getElementById('modal-cartao-limite').value = cartao.limite;
+                document.getElementById('modal-cartao-vencimento').value = cartao.vencimento || 10;
+            }
+        }
+
+        async function salvarEdicaoCartao() {
+            const nomeOriginal = document.getElementById('modal-select-cartao').value;
+            const novoNome = document.getElementById('modal-cartao-nome').value.trim();
+            const novoLimite = parseFloat(document.getElementById('modal-cartao-limite').value) || 0;
+            const novoVencimento = parseInt(document.getElementById('modal-cartao-vencimento').value) || 10;
+
+            if (!novoNome) return alert('O nome do cartão não pode ficar em branco.');
+
+            const res = await fetch('/api/editar_cartao', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome_original: nomeOriginal,
+                    nome: novoNome,
+                    limite: novoLimite,
+                    vencimento: novoVencimento
+                })
+            });
+
+            if (res.ok) {
+                fecharModalEdicao();
+                carregarDados();
+            } else {
+                alert('Erro ao editar cartão.');
+            }
+        }
+
+        carregarDados();
+    </script>
+</body>
+</html>

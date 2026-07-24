@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K$ - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slateBg: '#0F172A',
+                        cardBg: '#1E293B',
+                        brandBlue: '#0284C7',
+                        brandRed: '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slateBg text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-cardBg border border-slate-700 rounded-2xl p-8 max-w-sm w-full shadow-2xl space-y-6">
+        <div class="text-center">
+            <h1 class="text-5xl font-black text-brandBlue">K$</h1>
+            <p class="text-xs text-slate-400 font-medium mt-1">Controle Financeiro Professional</p>
+        </div>
+
+        <div id="erro-msg" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-3 rounded-lg text-center"></div>
+
+        <form id="form-login" class="space-y-4" onsubmit="fazerLogin(event)">
+            <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Usuário</label>
+                <input type="text" id="usuario" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brandBlue transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Senha</label>
+                <input type="password" id="senha" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brandBlue transition">
+            </div>
+
+            <button type="submit" class="w-full bg-brandBlue hover:bg-sky-600 font-bold py-3 rounded-lg transition text-white shadow-lg">
+                Acessar Conta
+            </button>
+        </form>
+
+        <div class="text-center pt-2">
+            <a href="/cadastro" class="text-xs text-brandRed font-bold hover:underline">Criar nova conta</a>
+        </div>
+    </div>
+
+    <script>
+        async function fazerLogin(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+            const erroDiv = document.getElementById('erro-msg');
+
+            erroDiv.classList.add('hidden');
+
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, senha })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                window.location.href = '/dashboard';
+            } else {
+                erroDiv.innerText = data.mensagem || 'Erro ao fazer login.';
+                erroDiv.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

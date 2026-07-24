@@ -1,0 +1,214 @@
+{
+    "klayvertpaiva": {
+        "salario": 1621.21,
+        "renda_extra": 0.0,
+        "cartoes": [
+            {
+                "nome": "nubank",
+                "fechamento": "9"
+            },
+            {
+                "nome": "nubank",
+                "fechamento": "9"
+            },
+            {
+                "nome": "bb",
+                "fechamento": "9"
+            }
+        ],
+        "gastos_cartao": [],
+        "boletos": [],
+        "emprestimos": [],
+        "dinheiro_guardado": []
+    },
+    "kak55551": {
+        "salario": 1621.0,
+        "renda_extra": 550.0,
+        "cartoes": [],
+        "gastos_cartao": [],
+        "boletos": [],
+        "emprestimos": [],
+        "dinheiro_guardado": []
+    },
+    "kaka": {
+        "salario": 151.0,
+        "renda_extra": 500.0,
+        "cartoes": [],
+        "gastos_cartao": [],
+        "boletos": [],
+        "emprestimos": [],
+        "dinheiro_guardado": []
+    },
+    "alinepereira1": {
+        "salario": 600.0,
+        "renda_extra": 600.0,
+        "cartoes": [
+            {
+                "nome": "Nubank",
+                "limite": 1621.0
+            }
+        ],
+        "gastos_cartao": [],
+        "boletos": [],
+        "emprestimos": [],
+        "dinheiro_guardado": [],
+        "saidas": [
+            {
+                "tipo": "Gasto Avulso / Pix",
+                "descricao": "gasolina",
+                "valor_total": 25.0,
+                "parcelas": 1,
+                "valor_parcela": 25.0,
+                "cartao": "-",
+                "status": "Pago",
+                "data": "21/07/2026"
+            },
+            {
+                "tipo": "Cartão de Crédito",
+                "descricao": "celular",
+                "valor_total": 100.0,
+                "parcelas": 12,
+                "valor_parcela": 8.333333333333334,
+                "cartao": "Nubank",
+                "status": "Pago",
+                "data": "21/07/2026"
+            },
+            {
+                "tipo": "Gasto Avulso / Pix",
+                "descricao": "carro1",
+                "valor_total": 10.0,
+                "parcelas": 1,
+                "valor_parcela": 10.0,
+                "cartao": "-",
+                "status": "Pago",
+                "data": "23/07/2026"
+            },
+            {
+                "tipo": "Cartão de Crédito",
+                "descricao": "kk",
+                "valor_total": 1000.0,
+                "parcelas": 14,
+                "valor_parcela": 71.42857142857143,
+                "cartao": "Nubank",
+                "status": "Pago",
+                "data": "07/08/2026"
+            }
+        ]
+    },
+    "klayvert06": {
+        "salario": 5000.0,
+        "renda_extra": 5000.0,
+        "cartoes": [
+            {
+                "nome": "nubank",
+                "limite": 1500.0,
+                "vencimento": 10
+            },
+            {
+                "nome": "banco do brasil",
+                "limite": 3000.0,
+                "vencimento": 5
+            }
+        ],
+        "saidas": [
+            {
+                "data": "2026-07-23",
+                "tipo": "Cartão de Crédito",
+                "descricao": "mercado",
+                "valor": 150,
+                "cartao": "nubank",
+                "parcelas": 3,
+                "pago": false
+            },
+            {
+                "data": "2026-07-23",
+                "tipo": "Cartão de Crédito",
+                "descricao": "mercado",
+                "valor": 150,
+                "cartao": "nubank",
+                "parcelas": 3,
+                "pago": false
+            },
+            {
+                "data": "2026-07-23",
+                "tipo": "Cartão de Crédito",
+                "descricao": "mercado",
+                "valor": 1500,
+                "cartao": "banco do brasil",
+                "parcelas": 16,
+                "pago": false
+            },
+            {
+                "id_compra": 1784851380.858153,
+                "data_compra": "2026-07-24",
+                "mes_referencia": "2026-10",
+                "tipo": "Cartão de Crédito",
+                "descricao": "mercado",
+                "valor_total": 150.0,
+                "valor_parcela": 50.0,
+                "cartao": "nubank",
+                "parcela_atual": 3,
+                "total_parcelas": 3,
+                "pago": false
+            },
+            {
+                "id_compra": 1784851445.557312,
+                "data_compra": "2026-07-24",
+                "mes_referencia": "2026-08",
+                "tipo": "Cartão de Crédito",
+                "descricao": "internet",
+                "valor_total": 200.0,
+                "valor_parcela": 66.66666666666667,
+                "cartao": "nubank",
+                "parcela_atual": 1,
+                "total_parcelas": 3,
+                "pago": false
+            },
+            {
+                "id_compra": 1784851445.557332,
+                "data_compra": "2026-07-24",
+                "mes_referencia": "2026-09",
+                "tipo": "Cartão de Crédito",
+                "descricao": "internet",
+                "valor_total": 200.0,
+                "valor_parcela": 66.66666666666667,
+                "cartao": "nubank",
+                "parcela_atual": 2,
+                "total_parcelas": 3,
+                "pago": false
+            },
+            {
+                "id_compra": 1784851445.557369,
+                "data_compra": "2026-07-24",
+                "mes_referencia": "2026-10",
+                "tipo": "Cartão de Crédito",
+                "descricao": "internet",
+                "valor_total": 200.0,
+                "valor_parcela": 66.66666666666667,
+                "cartao": "nubank",
+                "parcela_atual": 3,
+                "total_parcelas": 3,
+                "pago": false
+            },
+            {
+                "id_compra": 1784851534.321206,
+                "data_compra": "2026-07-24",
+                "mes_referencia": "2026-07",
+                "tipo": "Débito / Pix",
+                "descricao": "gasolina",
+                "valor_total": 50.0,
+                "valor_parcela": 50.0,
+                "cartao": "Nenhum",
+                "parcela_atual": 1,
+                "total_parcelas": 1,
+                "pago": true
+            }
+        ]
+    },
+    "klayvert2020": {
+        "salario": 100.0,
+        "renda_extra": 100.0,
+        "cartoes": [],
+        "saidas": []
+    }
+}
