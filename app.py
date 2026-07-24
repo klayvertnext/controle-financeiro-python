@@ -6,9 +6,15 @@ import os
 app = Flask(__name__)
 app.secret_key = 'k_financeiro_secret_key_super_seguro'
 
-# Configuração do Banco de Dados SQLite (Persistência Permanente)
+# Configuração do Banco de Dados SQLite para o Render/Local
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+# Se estiver no Render, usa a pasta /tmp para evitar erros de permissão
+if 'RENDER' in os.environ:
+    db_path = '/tmp/database.db'
+else:
+    db_path = os.path.join(basedir, 'database.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
