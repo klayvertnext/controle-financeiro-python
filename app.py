@@ -84,18 +84,31 @@ def login():
         db.create_all()
 
     if request.method == 'POST':
-        identificador = str(request.form.get('email', '') or request.form.get('nome', '')).strip().lower()
-        senha = str(request.form.get('senha', '')).strip()
+        identificador = request.form.get('identificador', '').strip()
+        
+        # Fallbacks de segurança
+        if not identificador:
+            identificador = request.form.get('email', '').strip()
+        if not identificador:
+            identificador = request.form.get('nome', '').strip()
+
+        senha = request.form.get('senha', '').strip()
 
         if not identificador or not senha:
             return render_template('login.html', erro="Preencha todos os campos obrigatórios.")
 
         try:
-            user = Usuario.query.filter((Usuario.nome == identificador) | (Usuario.email == identificador)).first()
+            # Busca pelo Nome de Usuário (respeitando maiúsculas) ou E-mail (minúsculas)
+            user = Usuario.query.filter(
+                (Usuario.nome == identificador) | 
+                (Usuario.email == identificador.lower())
+            ).first()
+            
             if user and check_password_hash(user.senha, senha):
                 session['usuario_id'] = user.id
                 session['usuario_nome'] = user.nome
                 return redirect(url_for('dashboard'))
+                
             return render_template('login.html', erro="Usuário/E-mail ou senha incorretos.")
         except Exception as e:
             return render_template('login.html', erro="Erro ao processar o login. Tente novamente.")
@@ -116,24 +129,19 @@ def cadastro():
         email = email_raw.strip().lower() if email_raw else ''
         senha = senha_raw.strip() if senha_raw else ''
 
-        # Validação Básica
         if not nome or not email or not senha:
             return render_template('cadastro.html', erro="Preencha todos os campos obrigatórios.")
 
-        # Validação Estrita do Gmail
         if not email.endswith('@gmail.com'):
             return render_template('cadastro.html', erro="O e-mail precisa ser do Gmail (@gmail.com).")
 
-        # Validação do Tamanho da Senha
         if len(senha) < 7:
             return render_template('cadastro.html', erro="A senha deve ter no mínimo 7 caracteres.")
 
         try:
-            # Checa se o Nome de Usuário já existe
             if Usuario.query.filter_by(nome=nome).first():
                 return render_template('cadastro.html', erro="Este nome de usuário já está em uso. Escolha outro.")
 
-            # Checa se o E-mail já existe
             if Usuario.query.filter_by(email=email).first():
                 return render_template('cadastro.html', erro="Este e-mail já está cadastrado em nosso sistema.")
 

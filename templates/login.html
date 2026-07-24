@@ -1,77 +1,136 @@
 <!DOCTYPE html>
-<html lang="pt-BR" id="htmlRoot" class="dark">
+<html lang="pt-br" data-bs-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - K$ Financeiro</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    tailwind.config = { darkMode: 'class' }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Financeiro - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 35px 30px 30px 30px;
+            background: var(--bs-card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--bs-border-color);
+            position: relative;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--bs-body-color);
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+            z-index: 10;
+        }
+        .theme-toggle:focus {
+            outline: none;
+        }
+        .form-control {
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+        .btn-primary {
+            padding: 11px;
+            font-weight: 600;
+        }
+    </style>
 </head>
-<body id="bodyRoot" class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 transition-colors duration-200">
+<body>
 
-  <div class="absolute top-4 right-4">
-    <button onclick="toggleTheme()" class="p-2.5 bg-slate-900 dark:bg-slate-900 bg-white border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shadow-md transition-colors" title="Alternar Tema">
-      <i data-lucide="sun" id="themeIcon" class="w-5 h-5"></i>
-    </button>
-  </div>
+    <div class="login-card">
+        <button class="theme-toggle" id="btnToggleTheme" title="Alternar modo claro/escuro" type="button">
+            <i class="bi bi-moon-fill" id="themeIcon"></i>
+        </button>
 
-  <div class="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-xl transition-colors">
-    <div class="text-center mb-6">
-      <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-indigo-600/30">K$</div>
-      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Bem-vindo de volta</h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Acesse sua conta para continuar</p>
+        <div class="text-center mb-4 mt-1">
+            <h3 class="fw-bold text-primary">K-Financeiro</h3>
+            <p class="text-muted small">Acesse sua conta para continuar</p>
+        </div>
+
+        {% if erro %}
+            <div class="alert alert-danger py-2 text-center small" role="alert">
+                {{ erro }}
+            </div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label for="identificador" class="form-label small fw-bold text-secondary">Nome de Usuário ou E-mail</label>
+                <input type="text" class="form-control" id="identificador" name="identificador" placeholder="Ex: Joao@123 ou email@gmail.com" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <label for="senha" class="form-label small fw-bold text-secondary">Senha</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="senha" name="senha" placeholder="Sua senha" required>
+                    <button class="btn btn-outline-secondary" type="button" id="toggleSenha" title="Ver ou ocultar senha">
+                        <i class="bi bi-eye" id="iconOlho"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary rounded-pill shadow-sm">Entrar</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-3">
+            <p class="small text-muted">Ainda não tem uma conta? <a href="/cadastro" class="text-decoration-none fw-bold">Cadastre-se</a></p>
+        </div>
     </div>
 
-    <form action="/login" method="POST" class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Usuário</label>
-        <input type="text" name="usuario" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Senha</label>
-        <input type="password" name="senha" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
-      </div>
-      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-indigo-600/20">Entrar</button>
-    </form>
+    <script>
+        const btnToggleTheme = document.getElementById('btnToggleTheme');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+        atualizarIconeTema(savedTheme);
 
-    <div class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-      Não tem uma conta? <a href="/cadastro" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">Cadastre-se</a>
-    </div>
-  </div>
+        btnToggleTheme.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            atualizarIconeTema(newTheme);
+        });
 
-  <script>
-    function updateIcon() {
-      const isDark = document.getElementById('htmlRoot').classList.contains('dark');
-      const icon = document.getElementById('themeIcon');
-      if (icon) {
-        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-        lucide.createIcons();
-      }
-    }
+        function atualizarIconeTema(theme) {
+            themeIcon.className = theme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-fill text-secondary';
+        }
 
-    function toggleTheme() {
-      const html = document.getElementById('htmlRoot');
-      const body = document.getElementById('bodyRoot');
-      if (html.classList.contains('dark')) {
-        html.classList.remove('dark');
-        body.className = "min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-center items-center px-4 transition-colors duration-200";
-        localStorage.setItem('theme', 'light');
-      } else {
-        html.classList.add('dark');
-        body.className = "min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 transition-colors duration-200";
-        localStorage.setItem('theme', 'dark');
-      }
-      updateIcon();
-    }
+        const inputSenha = document.getElementById('senha');
+        const btnToggleSenha = document.getElementById('toggleSenha');
+        const iconOlho = document.getElementById('iconOlho');
 
-    if (localStorage.getItem('theme') === 'light') {
-      document.getElementById('htmlRoot').classList.remove('dark');
-      document.getElementById('bodyRoot').className = "min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-center items-center px-4 transition-colors duration-200";
-    }
-    document.addEventListener('DOMContentLoaded', updateIcon);
-  </script>
+        btnToggleSenha.addEventListener('click', () => {
+            if (inputSenha.type === 'password') {
+                inputSenha.type = 'text';
+                iconOlho.className = 'bi bi-eye-slash';
+            } else {
+                inputSenha.type = 'password';
+                iconOlho.className = 'bi bi-eye';
+            }
+        });
+    </script>
 </body>
 </html>
