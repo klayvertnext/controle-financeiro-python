@@ -1,70 +1,92 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>K-Financeiro - Cadastro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f4f6f9;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .register-card {
             width: 100%;
-            max-width: 400px;
-            padding: 35px;
-            background: #ffffff;
+            max-width: 420px;
+            padding: 30px;
+            background: var(--bs-card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--bs-border-color);
+            position: relative;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--bs-body-color);
+            cursor: pointer;
         }
         .form-control {
-            padding: 12px;
+            padding: 11px;
             font-size: 14px;
         }
         .btn-primary {
-            padding: 12px;
+            padding: 11px;
             font-weight: 600;
-            background-color: #0d6efd;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #0b5ed7;
         }
     </style>
 </head>
 <body>
 
     <div class="register-card">
-        <div class="text-center mb-4">
+        <button class="theme-toggle" id="btnToggleTheme" title="Alternar tema claro/escuro">
+            <i class="bi bi-moon-fill" id="themeIcon"></i>
+        </button>
+
+        <div class="text-center mb-4 mt-2">
             <h3 class="fw-bold text-primary">K-Financeiro</h3>
-            <p class="text-muted small">Crie sua nova conta para começar</p>
+            <p class="text-muted small">Crie sua conta informando seu usuário e senha</p>
         </div>
 
         {% if erro %}
-            <div class="alert alert-danger py-2 text-center small" role="alert">
+            <div class="alert alert-danger py-2 text-center small" role="alert" id="servidorErro">
                 {{ erro }}
             </div>
         {% endif %}
 
-        <form action="/cadastro" method="POST">
-            <div class="mb-3">
-                <label for="nome" class="form-label small fw-bold text-secondary">Nome Completo</label>
-                <input type="text" class="form-control" id="nome" name="nome" placeholder="Digite seu nome" required autofocus>
-            </div>
+        <div class="alert alert-warning py-2 text-center small d-none" role="alert" id="msgAlerta"></div>
 
+        <form action="/cadastro" method="POST" id="formCadastro" onsubmit="return validarFormulario(event)">
             <div class="mb-3">
-                <label for="email" class="form-label small fw-bold text-secondary">E-mail</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="seu@email.com" required>
+                <label for="nome" class="form-label small fw-bold text-secondary">Nome de Usuário</label>
+                <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: Joao@123" required autofocus>
+                <div class="form-text text-muted" style="font-size: 11px;">
+                    Deve conter pelo menos uma <strong>letra maiúscula</strong> e um <strong>símbolo</strong> (@#$%...).
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="senha" class="form-label small fw-bold text-secondary">Senha</label>
-                <input type="password" class="form-control" id="senha" name="senha" placeholder="••••••••" required>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="senha" name="senha" placeholder="Mínimo 7 dígitos" required>
+                    <button class="btn btn-outline-secondary" type="button" id="toggleSenha" title="Ver ou ocultar senha">
+                        <i class="bi bi-eye" id="iconOlho"></i>
+                    </button>
+                </div>
+                <div class="form-text text-muted" style="font-size: 11px;">
+                    A senha deve ter no mínimo <strong>7 caracteres</strong>.
+                </div>
             </div>
 
             <div class="d-grid mt-4">
@@ -77,5 +99,81 @@
         </div>
     </div>
 
+    <script>
+        // 1. Alternar Tema Claro / Escuro
+        const btnToggleTheme = document.getElementById('btnToggleTheme');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        // Verificar preferência salva no navegador
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+        atualizarIconeTema(savedTheme);
+
+        btnToggleTheme.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            atualizarIconeTema(newTheme);
+        });
+
+        function atualizarIconeTema(theme) {
+            if (theme === 'dark') {
+                themeIcon.className = 'bi bi-sun-fill text-warning';
+            } else {
+                themeIcon.className = 'bi bi-moon-fill text-secondary';
+            }
+        }
+
+        // 2. Botão de Ver / Ocultar Senha
+        const inputSenha = document.getElementById('senha');
+        const btnToggleSenha = document.getElementById('toggleSenha');
+        const iconOlho = document.getElementById('iconOlho');
+
+        btnToggleSenha.addEventListener('click', () => {
+            if (inputSenha.type === 'password') {
+                inputSenha.type = 'text';
+                iconOlho.className = 'bi bi-eye-slash';
+            } else {
+                inputSenha.type = 'password';
+                iconOlho.className = 'bi bi-eye';
+            }
+        });
+
+        // 3. Validação em tempo real das regras pedidas
+        function validarFormulario(event) {
+            const nomeInput = document.getElementById('nome').value.trim();
+            const senhaInput = document.getElementById('senha').value;
+            const msgAlerta = document.getElementById('msgAlerta');
+
+            // Limpar erro do servidor se o utilizador tentar enviar de novo
+            const servidorErro = document.getElementById('servidorErro');
+            if (servidorErro) servidorErro.style.display = 'none';
+
+            // Regra 1: Letra maiúscula no nome de usuário
+            const temMaiuscula = /[A-Z]/.test(nomeInput);
+            // Regra 2: Símbolos do tipo @#$% e etc no nome de usuário
+            const temSimbolo = /[^a-zA-Z0-9\s]/.test(nomeInput);
+
+            if (!temMaiuscula || !temSimbolo) {
+                event.preventDefault();
+                msgAlerta.innerText = "O nome de usuário precisa conter pelo menos uma letra maiúscula e um símbolo (ex: @, #, $, %, etc.).";
+                msgAlerta.classList.remove('d-none');
+                return false;
+            }
+
+            // Regra 3: Senha no mínimo 7 dígitos
+            if (senhaInput.length < 7) {
+                event.preventDefault();
+                msgAlerta.innerText = "A senha deve ter no mínimo 7 dígitos.";
+                msgAlerta.classList.remove('d-none');
+                return false;
+            }
+
+            msgAlerta.classList.add('d-none');
+            return true;
+        }
+    </script>
 </body>
 </html>
