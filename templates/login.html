@@ -15,7 +15,7 @@
         extend: {
           colors: {
             brand: {
-              50: '#eep2ff',
+              50: '#eef2ff',
               100: '#e0e7ff',
               400: '#818cf8',
               500: '#6366f1',
@@ -155,7 +155,7 @@
       lucide.createIcons();
     });
 
-    // Envio com chaves 'usuario' e 'senha' para casar com o Python
+    // Envio do formulário
     const form = document.getElementById('loginForm');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
@@ -172,8 +172,8 @@
       if (btnIcon) btnIcon.classList.add('hidden');
       btnSpinner.classList.remove('hidden');
 
-      const usuarioVal = document.getElementById('username').value.trim();
-      const senhaVal = passwordInput.value;
+      const userVal = document.getElementById('username').value.trim();
+      const passVal = passwordInput.value;
 
       try {
         const response = await fetch('/login', {
@@ -181,15 +181,21 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ usuario: usuarioVal, senha: senhaVal })
+          // Envia 'usuario' e 'username' / 'senha' e 'password' para garantir compatibilidade total com a rota do Flask
+          body: JSON.stringify({ 
+            usuario: userVal, 
+            username: userVal, 
+            senha: passVal, 
+            password: passVal 
+          })
         });
 
         const data = await response.json();
 
-        if (response.ok && data.status === 'sucesso') {
-          window.location.href = '/dashboard';
+        if (response.ok && (data.status === 'sucesso' || response.redirected)) {
+          window.location.href = data.redirect || '/dashboard';
         } else {
-          errorMessage.textContent = data.mensagem || 'Usuário ou senha incorretos.';
+          errorMessage.textContent = data.mensagem || data.erro || 'Usuário ou senha incorretos.';
           errorMessage.classList.remove('hidden');
           
           submitBtn.disabled = false;
@@ -198,7 +204,7 @@
           btnSpinner.classList.add('hidden');
         }
       } catch (err) {
-        errorMessage.textContent = 'Erro ao se conectar com o servidor.';
+        errorMessage.textContent = 'Erro de conexão com o servidor. Tente novamente.';
         errorMessage.classList.remove('hidden');
         
         submitBtn.disabled = false;
