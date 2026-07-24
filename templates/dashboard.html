@@ -32,11 +32,54 @@
     .toast-progress {
       animation: progress linear forwards;
     }
+    @keyframes modalIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-animation {
+      animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body id="bodyRoot" class="min-h-screen bg-slate-950 text-slate-100 transition-colors duration-200 flex flex-col antialiased relative">
 
   <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 max-w-sm w-full px-4 pointer-events-none"></div>
+
+  <div id="modalEditarCartao" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden px-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl max-w-md w-full modal-animation">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+          <i data-lucide="edit-3" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+          <span>Editar Cartão</span>
+        </h3>
+        <button onclick="fecharModalEditarCartao()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formModalCartao" onsubmit="salvarEdicaoModalCartao(event)" class="space-y-4">
+        <input type="hidden" id="modalCartaoId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nome do Cartão</label>
+          <input type="text" id="modalCartaoNome" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Limite (R$)</label>
+            <input type="number" step="0.01" id="modalCartaoLimite" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Vencimento (Dia)</label>
+            <input type="number" min="1" max="31" id="modalCartaoVencimento" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div class="flex space-x-3 pt-2">
+          <button type="button" onclick="fecharModalEditarCartao()" class="flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-all">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <header class="border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 sticky top-0 z-30 backdrop-blur-md shadow-sm transition-colors">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -159,7 +202,7 @@
             <i data-lucide="credit-card" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
             <span>Meus Cartões de Crédito</span>
           </h2>
-          <button onclick="abrirModalCartao()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all">Novo Cartão</button>
+          <button onclick="abrirModalNovoCartao()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all">Novo Cartão</button>
         </div>
         <div id="listaCartoesResumo" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         <div id="cartoesVazio" class="py-6 text-center text-slate-500 dark:text-slate-400 text-xs hidden">
@@ -211,9 +254,8 @@
         </div>
 
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-lg transition-colors">
-          <h2 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">Gerenciamento Rápido de Cartão</h2>
+          <h2 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">Cadastrar Novo Cartão</h2>
           <form id="formCartao" onsubmit="cadastrarCartao(event)" class="space-y-3">
-            <input type="hidden" id="cartaoIdEdit">
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nome do Cartão</label>
               <input type="text" id="cartaoNome" placeholder="Ex: Nubank" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
@@ -228,10 +270,7 @@
                 <input type="number" min="1" max="31" id="cartaoVencimento" placeholder="10" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
               </div>
             </div>
-            <div class="flex space-x-2">
-              <button type="submit" id="btnSalvarCartao" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md">Salvar Cartão</button>
-              <button type="button" id="btnCancelarEdicao" onclick="resetarFormCartao()" class="hidden px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl text-xs transition-all">Cancelar</button>
-            </div>
+            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md">Salvar Cartão</button>
           </form>
         </div>
       </div>
@@ -271,7 +310,7 @@
     let chartInstance = null;
     let dadosGlobais = { rendas: {}, despesas: [], cartoes: [] };
 
-    // --- SISTEMA DE TOAST NOTIFICATIONS MODERNAS ---
+    // --- SISTEMA DE TOAST NOTIFICATIONS ---
     function mostrarToast(mensagem, tipo = 'sucesso') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -327,7 +366,23 @@
       toastEl.classList.add('toast-exit');
       setTimeout(() => toastEl.remove(), 300);
     }
-    // ----------------------------------------------
+
+    // --- PERSISTÊNCIA AUTOMÁTICA NO BANCO DE DADOS ---
+    async function salvarNoServidor() {
+      try {
+        const res = await fetch('/api/salvar_dados', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dadosGlobais)
+        });
+        const d = await res.json();
+        if (!res.ok || d.status !== 'sucesso') {
+          console.error("Erro ao persistir dados:", d.mensagem);
+        }
+      } catch (err) {
+        console.error("Erro de conexão ao salvar dados.");
+      }
+    }
 
     function updateIcon() {
       const isDark = document.getElementById('htmlRoot').classList.contains('dark');
@@ -485,7 +540,7 @@
           </div>
 
           <div class="flex justify-end space-x-2 pt-1 border-t border-slate-200 dark:border-slate-800">
-            <button onclick='editarCartaoPrompt(${JSON.stringify(c)})' class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium transition-colors">Editar</button>
+            <button onclick='abrirModalEditarCartao(${JSON.stringify(c)})' class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium transition-colors">Editar</button>
             <button onclick="excluirCartao('${c.id}')" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[10px] font-medium transition-colors">Excluir</button>
           </div>
         `;
@@ -555,6 +610,7 @@
       if (despesa) {
         despesa.pago = isPago;
         atualizarInterface();
+        salvarNoServidor();
         if (isPago) {
           mostrarToast("Despesa marcada como paga.", "sucesso");
         } else {
@@ -609,6 +665,7 @@
       if (!dadosGlobais.rendas) dadosGlobais.rendas = {};
       dadosGlobais.rendas[mesAtual] = { salario, extra };
       atualizarInterface();
+      await salvarNoServidor();
       mostrarToast("Receita atualizada com sucesso.", "sucesso");
     }
 
@@ -644,10 +701,6 @@
 
       const valorParcela = valorTotal / qtdParcelas;
       const idBase = Date.now();
-
-      // Regra de Status de Pagamento:
-      // Débito, Pix, Dinheiro -> Pago automaticamente (pago: true)
-      // Cartão de Crédito -> Pendente (pago: false)
       const pagoAutomatico = (tipo !== 'Cartao');
 
       for (let i = 1; i <= qtdParcelas; i++) {
@@ -677,36 +730,29 @@
       document.getElementById('formDespesa').reset();
       toggleCartaoCampos();
       atualizarInterface();
+      await salvarNoServidor();
       mostrarToast("Despesa cadastrada com sucesso.", "sucesso");
     }
 
     async function cadastrarCartao(e) {
       e.preventDefault();
-      const idEdit = document.getElementById('cartaoIdEdit').value;
       const nome = document.getElementById('cartaoNome').value.trim();
       const limite = parseFloat(document.getElementById('cartaoLimite').value) || 0;
       const dia_vencimento = parseInt(document.getElementById('cartaoVencimento').value) || 1;
-
-      const endpoint = idEdit ? '/editar_cartao' : '/cadastrar_cartao';
-      const payload = idEdit ? { id: idEdit, nome, limite, dia_vencimento } : { nome, limite, dia_vencimento };
+      const idExt = 'c_' + Date.now();
 
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch('/cadastrar_cartao', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ id: idExt, nome, limite, dia_vencimento })
         });
         const d = await res.json();
         if (res.ok && d.status === 'sucesso') {
-          if (idEdit) {
-            dadosGlobais.cartoes = dadosGlobais.cartoes.map(c => String(c.id) === String(idEdit) ? { id: idEdit, nome, limite, dia_vencimento } : c);
-            mostrarToast("Dados atualizados com sucesso.", "sucesso");
-          } else {
-            dadosGlobais.cartoes.push({ id: Date.now().toString(), nome, limite, dia_vencimento });
-            mostrarToast("Cartão cadastrado com sucesso.", "sucesso");
-          }
-          resetarFormCartao();
+          dadosGlobais.cartoes.push({ id: idExt, nome, limite, dia_vencimento });
+          document.getElementById('formCartao').reset();
           atualizarInterface();
+          mostrarToast("Cartão cadastrado com sucesso.", "sucesso");
         } else {
           mostrarToast(d.mensagem || "Erro ao salvar cartão.", "erro");
         }
@@ -715,22 +761,44 @@
       }
     }
 
-    function editarCartaoPrompt(c) {
-      switchTab('cards');
-      document.getElementById('cartaoIdEdit').value = c.id;
-      document.getElementById('cartaoNome').value = c.nome;
-      document.getElementById('cartaoLimite').value = c.limite;
-      document.getElementById('cartaoVencimento').value = c.dia_vencimento;
-      document.getElementById('btnSalvarCartao').textContent = "Atualizar Cartão";
-      document.getElementById('btnCancelarEdicao').classList.remove('hidden');
-      window.scrollTo({ top: 400, behavior: 'smooth' });
+    // --- FUNÇÕES DO MODAL DE EDIÇÃO FLUTUANTE ---
+    function abrirModalEditarCartao(c) {
+      document.getElementById('modalCartaoId').value = c.id;
+      document.getElementById('modalCartaoNome').value = c.nome;
+      document.getElementById('modalCartaoLimite').value = c.limite;
+      document.getElementById('modalCartaoVencimento').value = c.dia_vencimento;
+      document.getElementById('modalEditarCartao').classList.remove('hidden');
     }
 
-    function resetarFormCartao() {
-      document.getElementById('formCartao').reset();
-      document.getElementById('cartaoIdEdit').value = '';
-      document.getElementById('btnSalvarCartao').textContent = "Salvar Cartão";
-      document.getElementById('btnCancelarEdicao').classList.add('hidden');
+    function fecharModalEditarCartao() {
+      document.getElementById('modalEditarCartao').classList.add('hidden');
+    }
+
+    async function salvarEdicaoModalCartao(e) {
+      e.preventDefault();
+      const id = document.getElementById('modalCartaoId').value;
+      const nome = document.getElementById('modalCartaoNome').value.trim();
+      const limite = parseFloat(document.getElementById('modalCartaoLimite').value) || 0;
+      const dia_vencimento = parseInt(document.getElementById('modalCartaoVencimento').value) || 1;
+
+      try {
+        const res = await fetch('/editar_cartao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, nome, limite, dia_vencimento })
+        });
+        const d = await res.json();
+        if (res.ok && d.status === 'sucesso') {
+          dadosGlobais.cartoes = dadosGlobais.cartoes.map(c => String(c.id) === String(id) ? { id, nome, limite, dia_vencimento } : c);
+          fecharModalEditarCartao();
+          atualizarInterface();
+          mostrarToast("Dados atualizados com sucesso.", "sucesso");
+        } else {
+          mostrarToast(d.mensagem || "Erro ao atualizar cartão.", "erro");
+        }
+      } catch (err) {
+        mostrarToast("Erro de conexão ao atualizar cartão.", "erro");
+      }
     }
 
     async function excluirCartao(id) {
@@ -745,7 +813,7 @@
         if (res.ok && d.status === 'sucesso') {
           dadosGlobais.cartoes = dadosGlobais.cartoes.filter(c => String(c.id) !== String(id));
           atualizarInterface();
-          mostrarToast("Registro excluído com sucesso.", "sucesso");
+          mostrarToast("Cartão excluído com sucesso.", "sucesso");
         } else {
           mostrarToast(d.mensagem || "Erro ao excluir.", "erro");
         }
@@ -754,19 +822,20 @@
       }
     }
 
-    function excluirDespesa(idUnico) {
+    async function excluirDespesa(idUnico) {
       dadosGlobais.despesas = dadosGlobais.despesas.filter(item => item.idUnico !== idUnico);
       atualizarInterface();
-      mostrarToast("Registro excluído com sucesso.", "sucesso");
+      await salvarNoServidor();
+      mostrarToast("Despesa excluída com sucesso.", "sucesso");
     }
 
     function mudarMes() {
       atualizarInterface();
     }
 
-    function abrirModalCartao() {
+    function abrirModalNovoCartao() {
       switchTab('cards');
-      resetarFormCartao();
+      document.getElementById('formCartao').reset();
       document.getElementById('cartaoNome').focus();
       window.scrollTo({ top: 400, behavior: 'smooth' });
     }
