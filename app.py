@@ -1,14 +1,11 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'chave-secreta-financeiro-2026')
+app.secret_key = 'sua_chave_secreta_super_segura'
 
-# BANCO DE DADOS EM MEMÓRIA (Estrutura segura para testes e persistência em sessão)
-# Para produção definitiva, recomenda-se conectar ao SQLAlchemy/PostgreSQL.
-USUARIOS_DB = {}   # Ex: { 'usuario': 'hash_senha' }
-DADOS_USUARIO = {} # Ex: { 'usuario': { 'cartoes': [], 'despesas': [], 'rendas': {'salario': 0.0, 'extra': 0.0} } }
+# Dicionário em memória para armazenar dados dos usuários (simulando banco de dados)
+DADOS_USUARIO = {}
 
 @app.route('/')
 def index():
@@ -18,46 +15,46 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET':
-        return render_template('login.html')
-    
-    dados = request.get_json(silent=True) or request.form
-    usuario = dados.get('usuario') or dados.get('username')
-    senha = dados.get('senha') or dados.get('password')
-
-    if not usuario or not senha:
-        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos.'}), 400
-
-    if usuario in USUARIOS_DB and check_password_hash(USUARIOS_DB[usuario], senha):
-        session['usuario'] = usuario
-        return jsonify({'status': 'sucesso', 'redirect': '/dashboard'})
-    
-    return jsonify({'status': 'erro', 'mensagem': 'Usuário ou senha incorretos.'}), 401
+    if request.method == 'POST':
+        # Suporta tanto JSON quanto Formulário tradicional
+        dados = request.get_json(silent=True) or request.form
+        usuario = dados.get('usuario') or dados.get('username')
+        senha = dados.get('senha') or dados.get('password')
+        
+        if usuario and senha:
+            session['usuario'] = usuario
+            if usuario not in DADOS_USUARIO:
+                DADOS_USUARIO[usuario] = {
+                    'rendas': {'salario': 0, 'extra': 0},
+                    'despesas': [],
+                    'cartoes': []
+                }
+            return jsonify({'status': 'sucesso', 'redirecionar': url_for('dashboard')}) if request.is_json else redirect(url_for('dashboard'))
+            
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos'}), 400
+        
+    return render_template('login.html')
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
-    if request.method == 'GET':
-        return render_template('cadastro.html')
-    
-    dados = request.get_json(silent=True) or request.form
-    usuario = dados.get('usuario') or dados.get('username')
-    senha = dados.get('senha') or dados.get('password')
-
-    if not usuario or not senha:
-        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos.'}), 400
-
-    if usuario in USUARIOS_DB:
-        return jsonify({'status': 'erro', 'mensagem': 'Este nome de usuário já está em uso.'}), 400
-
-    USUARIOS_DB[usuario] = generate_password_hash(senha)
-    DADOS_USUARIO[usuario] = {
-        'cartoes': [], 
-        'despesas': [], 
-        'rendas': {'salario': 0.0, 'extra': 0.0}
-    }
-
-    session['usuario'] = usuario
-    return jsonify({'status': 'sucesso', 'redirect': '/dashboard'})
+    if request.method == 'POST':
+        dados = request.get_json(silent=True) or request.form
+        usuario = dados.get('usuario') or dados.get('username')
+        senha = dados.get('senha') or dados.get('password')
+        
+        if usuario and senha:
+            session['usuario'] = usuario
+            if usuario not in DADOS_USUARIO:
+                DADOS_USUARIO[usuario] = {
+                    'rendas': {'salario': 0, 'extra': 0},
+                    'despesas': [],
+                    'cartoes': []
+                }
+            return jsonify({'status': 'sucesso', 'redirecionar': url_for('dashboard')}) if request.is_json else redirect(url_for('dashboard'))
+            
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos'}), 400
+        
+    return render_template('cadastro.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -66,40 +63,59 @@ def dashboard():
     return render_template('dashboard.html')
 
 @app.route('/api/dados', methods=['GET'])
-def obter_dados():
+def api_dados():
     if 'usuario' not in session:
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
-    
+        
     usuario = session['usuario']
-    dados = DADOS_USUARIO.get(usuario, {'cartoes': [], 'despesas': [], 'rendas': {'salario': 0.0, 'extra': 0.0}})
-    return jsonify({'status': 'sucesso', 'dados': dados, 'usuario': usuario})
+    if usuario not in DADOS_USUARIO:
+        DADOS_USUARIO[usuario] = {
+            'rendas': {'salario': 0, 'extra': 0},
+            'despesas': [],
+            'cartoes': []
+        }
+        
+    return jsonify({
+        'status': 'sucesso',
+        'usuario': usuario,
+        'dados': DADOS_USUARIO[usuario]
+    })
 
 @app.route('/cadastrar_cartao', methods=['POST'])
 def cadastrar_cartao():
     if 'usuario' not in session:
-        return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
-
-    dados = request.get_json(silent=True) or request.form
+        return jsonify({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}), 401
+        
+    usuario = session['usuario']
+    dados = request.get_json() or {}
+    
     nome = dados.get('nome')
-    limite = dados.get('limite')
-    dia_vencimento = dados.get('dia_vencimento')
-
+    limite = dados.get('limite', 0)
+    dia_vencimento = dados.get('dia_vencimento', 1)
+    
     if not nome:
         return jsonify({'status': 'erro', 'mensagem': 'O nome do cartão é obrigatório.'}), 400
-
-    usuario = session['usuario']
-    
+        
     if usuario not in DADOS_USUARIO:
-        DADOS_USUARIO[usuario] = {'cartoes': [], 'despesas': [], 'rendas': {'salario': 0.0, 'extra': 0.0}}
-    
+        DADOS_USUARIO[usuario] = {
+            'rendas': {'salario': 0, 'extra': 0},
+            'despesas': [],
+            'cartoes': []
+        }
+        
     novo_cartao = {
-        'nome': nome.strip(),
+        'nome': nome,
         'limite': float(limite or 0),
         'dia_vencimento': int(dia_vencimento or 1)
     }
     
     DADOS_USUARIO[usuario]['cartoes'].append(novo_cartao)
-    return jsonify({'status': 'sucesso', 'mensagem': 'Cartão cadastrado com sucesso!', 'cartoes': DADOS_USUARIO[usuario]['cartoes']})
+    
+    return jsonify({
+        'status': 'sucesso', 
+        'mensagem': 'Cartão cadastrado com sucesso!',
+        'cartoes': DADOS_USUARIO[usuario]['cartoes']
+    })
 
 @app.route('/logout')
 def logout():
