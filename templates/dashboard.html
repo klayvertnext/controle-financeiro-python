@@ -65,7 +65,6 @@
   </nav>
 
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
-
     <div id="sectionDashboard" class="space-y-6">
       <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
         <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center space-x-2">
@@ -130,7 +129,6 @@
 
     <div id="sectionCards" class="hidden space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
           <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Cadastrar Despesa / Saída</h2>
           <form id="formDespesa" onsubmit="cadastrarDespesa(event)" class="space-y-3">
@@ -215,16 +213,11 @@
         </div>
       </section>
     </div>
-
   </main>
 
   <script>
     let chartInstance = null;
-    let dadosGlobais = {
-      rendas: {},
-      despesas: [],
-      cartoes: []
-    };
+    let dadosGlobais = { rendas: {}, despesas: [], cartoes: [] };
 
     function updateIcon() {
       const isDark = document.getElementById('htmlRoot').classList.contains('dark');
@@ -299,11 +292,7 @@
           const d = await res.json();
           if (d.status === 'sucesso') {
             document.getElementById('userNameHeader').textContent = d.usuario || 'Usuário';
-            if (d.dados.rendas && typeof d.dados.rendas.salario !== 'undefined') {
-              dadosGlobais.rendas = { '2026-07': d.dados.rendas };
-            } else {
-              dadosGlobais.rendas = d.dados.rendas || {};
-            }
+            dadosGlobais.rendas = d.dados.rendas || {};
             dadosGlobais.despesas = d.dados.despesas || [];
             dadosGlobais.cartoes = d.dados.cartoes || [];
             atualizarInterface();
