@@ -1,200 +1,71 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR" id="htmlRoot" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - K$ Financeiro</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              500: '#6366f1',
-              600: '#4f46e5',
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.3s ease-out forwards',
-            'card-entry': 'cardEntry 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'glow-pulse': 'glowPulse 8s ease-in-out infinite alternate',
-          },
-          keyframes: {
-            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            cardEntry: { '0%': { opacity: '0', transform: 'translateY(12px) scale(0.99)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
-            glowPulse: { '0%': { opacity: '0.2', transform: 'scale(1)' }, '100%': { opacity: '0.4', transform: 'scale(1.06)' } }
-          }
-        }
-      }
-    }
+    tailwind.config = { darkMode: 'class' }
   </script>
-
-  <style>
-    body {
-      background-color: #0b0f19;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .bg-grid {
-      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-  </style>
 </head>
-<body class="min-h-screen text-slate-100 flex items-center justify-center p-4 relative overflow-hidden bg-grid animate-fade-in">
+<body class="min-h-screen bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100 flex flex-col justify-center items-center px-4 transition-colors duration-200">
 
-  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-glow-pulse"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600/15 rounded-full blur-[100px] animate-glow-pulse" style="animation-delay: 4s;"></div>
+  <div class="absolute top-4 right-4">
+    <button onclick="toggleTheme()" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl shadow-md transition-colors" title="Alternar Tema">
+      <i data-lucide="sun" id="themeIcon" class="w-5 h-5"></i>
+    </button>
   </div>
 
-  <main class="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl shadow-indigo-950/50 p-8 sm:p-10 relative z-10 animate-card-entry">
-    
-    <header class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-500/30 ring-1 ring-white/20 mb-4 transition-transform duration-300 hover:scale-105">
-        <span class="text-2xl font-black text-white tracking-wider">K$</span>
-      </div>
-      <h1 class="text-2xl font-bold tracking-tight text-white mb-1.5">Bem-vindo de volta</h1>
-      <p class="text-slate-400 text-xs sm:text-sm">Acesse sua conta para gerenciar suas finanças.</p>
-    </header>
+  <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <div class="text-center mb-6">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-indigo-600/30">K$</div>
+      <h2 class="text-lg font-bold text-slate-100">Bem-vindo de volta</h2>
+      <p class="text-xs text-slate-400 mt-1">Acesse sua conta para continuar</p>
+    </div>
 
-    <div id="errorMessage" class="hidden mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium animate-fade-in"></div>
-
-    <form id="loginForm" class="space-y-4">
-      
+    <form action="/login" method="POST" class="space-y-4">
       <div>
-        <label for="username" class="block text-xs uppercase font-bold text-slate-300 tracking-wider mb-1.5">Usuário</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-            <i data-lucide="user" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="text" 
-            id="username" 
-            required 
-            autocomplete="username"
-            placeholder="Digite seu usuário"
-            class="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
-          >
-        </div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Usuário</label>
+        <input type="text" name="usuario" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
-
       <div>
-        <label for="password" class="block text-xs uppercase font-bold text-slate-300 tracking-wider mb-1.5">Senha</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-            <i data-lucide="lock" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="password" 
-            id="password" 
-            required 
-            autocomplete="current-password"
-            placeholder="••••••••"
-            class="w-full pl-10 pr-10 py-3 bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
-          >
-          <button 
-            type="button" 
-            id="togglePassword"
-            tabindex="-1"
-            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
-          </button>
-        </div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Senha</label>
+        <input type="password" name="senha" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
-
-      <button 
-        type="submit" 
-        id="submitBtn"
-        class="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/25 transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center justify-center space-x-2 disabled:opacity-75 disabled:cursor-not-allowed group"
-      >
-        <span id="btnText">Entrar na conta</span>
-        <i data-lucide="arrow-right" id="btnIcon" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"></i>
-        <div id="btnSpinner" class="hidden w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-      </button>
-
+      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-indigo-600/20">Entrar</button>
     </form>
 
-    <footer class="mt-6 pt-5 border-t border-slate-800/80 text-center">
-      <p class="text-xs sm:text-sm text-slate-400">
-        Ainda não possui uma conta? 
-        <a href="/cadastro" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors underline-offset-4 hover:underline">
-          Criar nova conta
-        </a>
-      </p>
-    </footer>
-
-  </main>
+    <div class="mt-6 text-center text-xs text-slate-400">
+      Não tem uma conta? <a href="/cadastro" class="text-indigo-400 font-semibold hover:underline">Cadastre-se</a>
+    </div>
+  </div>
 
   <script>
-    lucide.createIcons();
-
-    // Toggle de Senha
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
-
-    togglePassword.addEventListener('click', () => {
-      const isPassword = passwordInput.getAttribute('type') === 'password';
-      passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-      eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+    function updateIcon() {
+      const isDark = document.getElementById('htmlRoot').classList.contains('dark');
+      const icon = document.getElementById('themeIcon');
+      icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
       lucide.createIcons();
-    });
-
-    // Submissão do Formulário
-    const form = document.getElementById('loginForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
-    const btnSpinner = document.getElementById('btnSpinner');
-    const errorMessage = document.getElementById('errorMessage');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      errorMessage.classList.add('hidden');
-      submitBtn.disabled = true;
-      btnText.textContent = "Entrando...";
-      if (btnIcon) btnIcon.classList.add('hidden');
-      btnSpinner.classList.remove('hidden');
-
-      const userVal = document.getElementById('username').value.trim();
-      const passVal = passwordInput.value;
-
-      try {
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario: userVal, senha: passVal })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.status === 'sucesso') {
-          window.location.href = data.redirect || '/dashboard';
-        } else {
-          errorMessage.textContent = data.mensagem || 'Usuário ou senha incorretos.';
-          errorMessage.classList.remove('hidden');
-          resetButton();
-        }
-      } catch (err) {
-        errorMessage.textContent = 'Erro de conexão com o servidor. Tente novamente.';
-        errorMessage.classList.remove('hidden');
-        resetButton();
-      }
-    });
-
-    function resetButton() {
-      submitBtn.disabled = false;
-      btnText.textContent = "Entrar na conta";
-      if (btnIcon) btnIcon.classList.remove('hidden');
-      btnSpinner.classList.add('hidden');
     }
+
+    function toggleTheme() {
+      const html = document.getElementById('htmlRoot');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      updateIcon();
+    }
+
+    if (localStorage.getItem('theme') === 'light') {
+      document.getElementById('htmlRoot').classList.remove('dark');
+    }
+    document.addEventListener('DOMContentLoaded', updateIcon);
   </script>
 </body>
 </html>

@@ -1,267 +1,71 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR" id="htmlRoot" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro - K$ Financeiro</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              500: '#6366f1',
-              600: '#4f46e5',
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.3s ease-out forwards',
-            'card-entry': 'cardEntry 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'glow-pulse': 'glowPulse 8s ease-in-out infinite alternate',
-          },
-          keyframes: {
-            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            cardEntry: { '0%': { opacity: '0', transform: 'translateY(12px) scale(0.99)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
-            glowPulse: { '0%': { opacity: '0.2', transform: 'scale(1)' }, '100%': { opacity: '0.4', transform: 'scale(1.06)' } }
-          }
-        }
-      }
-    }
+    tailwind.config = { darkMode: 'class' }
   </script>
-
-  <style>
-    body {
-      background-color: #0b0f19;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .bg-grid {
-      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-  </style>
 </head>
-<body class="min-h-screen text-slate-100 flex items-center justify-center p-4 relative overflow-hidden bg-grid animate-fade-in">
+<body class="min-h-screen bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100 flex flex-col justify-center items-center px-4 transition-colors duration-200">
 
-  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-glow-pulse"></div>
-    <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-[100px] animate-glow-pulse" style="animation-delay: 4s;"></div>
+  <div class="absolute top-4 right-4">
+    <button onclick="toggleTheme()" class="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl shadow-md transition-colors" title="Alternar Tema">
+      <i data-lucide="sun" id="themeIcon" class="w-5 h-5"></i>
+    </button>
   </div>
 
-  <main class="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl shadow-indigo-950/50 p-8 sm:p-10 relative z-10 animate-card-entry">
-    
-    <header class="text-center mb-6">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-500/30 ring-1 ring-white/20 mb-4 transition-transform duration-300 hover:scale-105">
-        <span class="text-2xl font-black text-white tracking-wider">K$</span>
-      </div>
-      <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Criar sua conta</h1>
-      <p class="text-slate-400 text-xs sm:text-sm">Organize sua vida financeira em segundos.</p>
-    </header>
+  <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <div class="text-center mb-6">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-indigo-600/30">K$</div>
+      <h2 class="text-lg font-bold text-slate-100">Criar Nova Conta</h2>
+      <p class="text-xs text-slate-400 mt-1">Comece a gerenciar suas finanças hoje</p>
+    </div>
 
-    <div id="errorMessage" class="hidden mb-4 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium animate-fade-in"></div>
-
-    <form id="cadastroForm" class="space-y-4">
-      
+    <form action="/cadastro" method="POST" class="space-y-4">
       <div>
-        <label for="username" class="block text-xs uppercase font-bold text-slate-300 tracking-wider mb-1.5">Escolha um usuário</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-            <i data-lucide="user" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="text" 
-            id="username" 
-            required 
-            autocomplete="username"
-            placeholder="Seu identificador único"
-            class="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
-          >
-        </div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Novo Usuário</label>
+        <input type="text" name="usuario" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
-
       <div>
-        <label for="password" class="block text-xs uppercase font-bold text-slate-300 tracking-wider mb-1.5">Crie uma senha</label>
-        <div class="relative group">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-            <i data-lucide="lock" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="password" 
-            id="password" 
-            required 
-            autocomplete="new-password"
-            placeholder="••••••••"
-            class="w-full pl-10 pr-10 py-3 bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
-          >
-          <button 
-            type="button" 
-            id="togglePassword"
-            tabindex="-1"
-            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <div id="passwordRequirements" class="mt-3 p-3 bg-slate-950/50 border border-slate-800/80 rounded-xl space-y-1.5 text-xs text-slate-400">
-          <p class="font-semibold text-slate-300 mb-1">Requisitos da senha:</p>
-          <div id="req-length" class="flex items-center space-x-2 transition-colors">
-            <i data-lucide="x-circle" class="w-3.5 h-3.5 text-rose-400 icon-status"></i>
-            <span>Pelo menos 8 caracteres</span>
-          </div>
-          <div id="req-upper" class="flex items-center space-x-2 transition-colors">
-            <i data-lucide="x-circle" class="w-3.5 h-3.5 text-rose-400 icon-status"></i>
-            <span>Uma letra maiúscula</span>
-          </div>
-          <div id="req-number" class="flex items-center space-x-2 transition-colors">
-            <i data-lucide="x-circle" class="w-3.5 h-3.5 text-rose-400 icon-status"></i>
-            <span>Um número</span>
-          </div>
-          <div id="req-special" class="flex items-center space-x-2 transition-colors">
-            <i data-lucide="circle-dashed" class="w-3.5 h-3.5 text-slate-500 icon-status"></i>
-            <span>Caractere especial (opcional)</span>
-          </div>
-        </div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Senha</label>
+        <input type="password" name="senha" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
       </div>
-
-      <button 
-        type="submit" 
-        id="submitBtn"
-        class="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/25 transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center justify-center space-x-2 disabled:opacity-75 disabled:cursor-not-allowed group"
-      >
-        <span id="btnText">Criar conta</span>
-        <i data-lucide="arrow-right" id="btnIcon" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"></i>
-        <div id="btnSpinner" class="hidden w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-      </button>
-
+      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-indigo-600/20">Cadastrar</button>
     </form>
 
-    <footer class="mt-6 pt-5 border-t border-slate-800/80 text-center">
-      <p class="text-xs sm:text-sm text-slate-400">
-        Já possui uma conta? 
-        <a href="/login" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors underline-offset-4 hover:underline">
-          Voltar ao Login
-        </a>
-      </p>
-    </footer>
-
-  </main>
+    <div class="mt-6 text-center text-xs text-slate-400">
+      Já tem uma conta? <a href="/login" class="text-indigo-400 font-semibold hover:underline">Faça login</a>
+    </div>
+  </div>
 
   <script>
-    lucide.createIcons();
-
-    // Toggle de Senha
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
-
-    togglePassword.addEventListener('click', () => {
-      const isPassword = passwordInput.getAttribute('type') === 'password';
-      passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-      eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+    function updateIcon() {
+      const isDark = document.getElementById('htmlRoot').classList.contains('dark');
+      const icon = document.getElementById('themeIcon');
+      icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
       lucide.createIcons();
-    });
+    }
 
-    // Validação Dinâmica da Senha
-    const reqLength = document.getElementById('req-length');
-    const reqUpper = document.getElementById('req-upper');
-    const reqNumber = document.getElementById('req-number');
-    const reqSpecial = document.getElementById('req-special');
-
-    function updateRequirement(el, isValid, isOptional = false) {
-      const icon = el.querySelector('i');
-      if (isValid) {
-        el.classList.remove('text-slate-400', 'text-rose-400');
-        el.classList.add('text-emerald-400', 'font-medium');
-        icon.setAttribute('data-lucide', 'check-circle-2');
-        icon.className = "w-3.5 h-3.5 text-emerald-400 icon-status";
+    function toggleTheme() {
+      const html = document.getElementById('htmlRoot');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
       } else {
-        el.classList.remove('text-emerald-400', 'font-medium');
-        if (isOptional) {
-          el.classList.add('text-slate-400');
-          icon.setAttribute('data-lucide', 'circle-dashed');
-          icon.className = "w-3.5 h-3.5 text-slate-500 icon-status";
-        } else {
-          el.classList.add('text-slate-400');
-          icon.setAttribute('data-lucide', 'x-circle');
-          icon.className = "w-3.5 h-3.5 text-rose-400 icon-status";
-        }
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
       }
-      lucide.createIcons();
+      updateIcon();
     }
 
-    passwordInput.addEventListener('input', (e) => {
-      const val = e.target.value;
-      const hasLength = val.length >= 8;
-      const hasUpper = /[A-Z]/.test(val);
-      const hasNumber = /[0-9]/.test(val);
-      const hasSpecial = /[^A-Za-z0-9]/.test(val);
-
-      updateRequirement(reqLength, hasLength);
-      updateRequirement(reqUpper, hasUpper);
-      updateRequirement(reqNumber, hasNumber);
-      updateRequirement(reqSpecial, hasSpecial, val.length === 0);
-    });
-
-    // Submissão do Formulário
-    const form = document.getElementById('cadastroForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const btnIcon = document.getElementById('btnIcon');
-    const btnSpinner = document.getElementById('btnSpinner');
-    const errorMessage = document.getElementById('errorMessage');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const passVal = passwordInput.value;
-      if (passVal.length < 8 || !/[A-Z]/.test(passVal) || !/[0-9]/.test(passVal)) {
-        errorMessage.textContent = 'A senha não atende aos requisitos mínimos de segurança.';
-        errorMessage.classList.remove('hidden');
-        return;
-      }
-      
-      errorMessage.classList.add('hidden');
-      submitBtn.disabled = true;
-      btnText.textContent = "Criando conta...";
-      if (btnIcon) btnIcon.classList.add('hidden');
-      btnSpinner.classList.remove('hidden');
-
-      const userVal = document.getElementById('username').value.trim();
-
-      try {
-        const response = await fetch('/cadastro', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario: userVal, senha: passVal })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.status === 'sucesso') {
-          window.location.href = data.redirect || '/dashboard';
-        } else {
-          errorMessage.textContent = data.mensagem || 'Erro ao criar conta.';
-          errorMessage.classList.remove('hidden');
-          resetButton();
-        }
-      } catch (err) {
-        errorMessage.textContent = 'Erro de conexão com o servidor. Tente novamente.';
-        errorMessage.classList.remove('hidden');
-        resetButton();
-      }
-    });
-
-    function resetButton() {
-      submitBtn.disabled = false;
-      btnText.textContent = "Criar conta";
-      if (btnIcon) btnIcon.classList.remove('hidden');
-      btnSpinner.classList.add('hidden');
+    if (localStorage.getItem('theme') === 'light') {
+      document.getElementById('htmlRoot').classList.remove('dark');
     }
+    document.addEventListener('DOMContentLoaded', updateIcon);
   </script>
 </body>
 </html>

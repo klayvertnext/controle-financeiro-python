@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import datetime
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_super_segura'
@@ -21,7 +20,7 @@ def login():
         if usuario and senha:
             session['usuario'] = usuario
             if usuario not in DADOS_USUARIO:
-                DADOS_USUARIO[usuario] = {'rendas': {'salario': 0, 'extra': 0}, 'despesas': [], 'cartoes': []}
+                DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
             return jsonify({'status': 'sucesso', 'redirecionar': url_for('dashboard')}) if request.is_json else redirect(url_for('dashboard'))
         return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos'}), 400
     return render_template('login.html')
@@ -35,7 +34,7 @@ def cadastro():
         if usuario and senha:
             session['usuario'] = usuario
             if usuario not in DADOS_USUARIO:
-                DADOS_USUARIO[usuario] = {'rendas': {'salario': 0, 'extra': 0}, 'despesas': [], 'cartoes': []}
+                DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
             return jsonify({'status': 'sucesso', 'redirecionar': url_for('dashboard')}) if request.is_json else redirect(url_for('dashboard'))
         return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos'}), 400
     return render_template('cadastro.html')
@@ -52,7 +51,7 @@ def api_dados():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
     usuario = session['usuario']
     if usuario not in DADOS_USUARIO:
-        DADOS_USUARIO[usuario] = {'rendas': {'salario': 0, 'extra': 0}, 'despesas': [], 'cartoes': []}
+        DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
     return jsonify({'status': 'sucesso', 'usuario': usuario, 'dados': DADOS_USUARIO[usuario]})
 
 @app.route('/cadastrar_cartao', methods=['POST'])
@@ -69,7 +68,7 @@ def cadastrar_cartao():
         return jsonify({'status': 'erro', 'mensagem': 'Nome obrigatório'}), 400
         
     if usuario not in DADOS_USUARIO:
-        DADOS_USUARIO[usuario] = {'rendas': {'salario': 0, 'extra': 0}, 'despesas': [], 'cartoes': []}
+        DADOS_USUARIO[usuario] = {'rendas': {}, 'despesas': [], 'cartoes': []}
         
     DADOS_USUARIO[usuario]['cartoes'].append({'nome': nome, 'limite': limite, 'dia_vencimento': dia_vencimento})
     return jsonify({'status': 'sucesso', 'mensagem': 'Cartão cadastrado com sucesso!'})
