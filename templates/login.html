@@ -29,18 +29,9 @@
             'glow-pulse': 'glowPulse 6s ease-in-out infinite alternate',
           },
           keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
-            },
-            cardEntry: {
-              '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' },
-              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-            },
-            glowPulse: {
-              '0%': { opacity: '0.25', transform: 'scale(1)' },
-              '100%': { opacity: '0.45', transform: 'scale(1.08)' },
-            }
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            cardEntry: { '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+            glowPulse: { '0%': { opacity: '0.25', transform: 'scale(1)' }, '100%': { opacity: '0.45', transform: 'scale(1.08)' } }
           }
         }
       }
@@ -77,7 +68,9 @@
       <p class="text-slate-400 text-sm">Acesse sua conta para gerenciar suas finanças.</p>
     </header>
 
-    <form id="loginForm" action="/login" method="POST" class="space-y-5">
+    <div id="errorMessage" class="hidden mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium animate-fade-in"></div>
+
+    <form id="loginForm" class="space-y-5">
       
       <div class="space-y-2">
         <label for="username" class="block text-xs uppercase font-bold text-slate-300 tracking-wider">Usuário</label>
@@ -139,7 +132,7 @@
     <footer class="mt-8 pt-6 border-t border-slate-800/80 text-center">
       <p class="text-sm text-slate-400">
         Ainda não possui uma conta? 
-        <a href="/cadastro" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200 underline-offset-4 hover:underline focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm">
+        <a href="/cadastro" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200 underline-offset-4 hover:underline">
           Criar nova conta
         </a>
       </p>
@@ -162,18 +155,57 @@
       lucide.createIcons();
     });
 
-    // Estado Loading no Submit
+    // Envio via JSON (evita erro 415)
     const form = document.getElementById('loginForm');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
     const btnIcon = document.getElementById('btnIcon');
     const btnSpinner = document.getElementById('btnSpinner');
+    const errorMessage = document.getElementById('errorMessage');
 
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      errorMessage.classList.add('hidden');
       submitBtn.disabled = true;
       btnText.textContent = "Entrando...";
       if (btnIcon) btnIcon.classList.add('hidden');
       btnSpinner.classList.remove('hidden');
+
+      const username = document.getElementById('username').value;
+      const password = passwordInput.value;
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'sucesso') {
+          window.location.href = '/dashboard';
+        } else {
+          errorMessage.textContent = data.mensagem || 'Usuário ou senha incorretos.';
+          errorMessage.classList.remove('hidden');
+          
+          submitBtn.disabled = false;
+          btnText.textContent = "Entrar na conta";
+          if (btnIcon) btnIcon.classList.remove('hidden');
+          btnSpinner.classList.add('hidden');
+        }
+      } catch (err) {
+        errorMessage.textContent = 'Erro ao se conectar com o servidor.';
+        errorMessage.classList.remove('hidden');
+        
+        submitBtn.disabled = false;
+        btnText.textContent = "Entrar na conta";
+        if (btnIcon) btnIcon.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+      }
     });
   </script>
 </body>

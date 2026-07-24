@@ -29,18 +29,9 @@
             'glow-pulse': 'glowPulse 6s ease-in-out infinite alternate',
           },
           keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
-            },
-            cardEntry: {
-              '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' },
-              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-            },
-            glowPulse: {
-              '0%': { opacity: '0.25', transform: 'scale(1)' },
-              '100%': { opacity: '0.45', transform: 'scale(1.08)' },
-            }
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            cardEntry: { '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+            glowPulse: { '0%': { opacity: '0.25', transform: 'scale(1)' }, '100%': { opacity: '0.45', transform: 'scale(1.08)' } }
           }
         }
       }
@@ -77,7 +68,9 @@
       <p class="text-slate-400 text-sm">Organize sua vida financeira em poucos segundos.</p>
     </header>
 
-    <form id="registerForm" action="/cadastro" method="POST" class="space-y-5">
+    <div id="errorMessage" class="hidden mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium animate-fade-in"></div>
+
+    <form id="registerForm" class="space-y-5">
       
       <div class="space-y-2">
         <label for="username" class="block text-xs uppercase font-bold text-slate-300 tracking-wider">Escolha um Usuário</label>
@@ -128,22 +121,22 @@
         <p class="text-xs font-semibold text-slate-400 tracking-wide mb-1">Requisitos da senha:</p>
         
         <div id="req-length" class="flex items-center space-x-2.5 text-xs text-slate-500 transition-all duration-200">
-          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon transition-transform duration-200"></i>
+          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon"></i>
           <span>Pelo menos 8 caracteres</span>
         </div>
 
         <div id="req-uppercase" class="flex items-center space-x-2.5 text-xs text-slate-500 transition-all duration-200">
-          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon transition-transform duration-200"></i>
+          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon"></i>
           <span>Uma letra maiúscula</span>
         </div>
 
         <div id="req-number" class="flex items-center space-x-2.5 text-xs text-slate-500 transition-all duration-200">
-          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon transition-transform duration-200"></i>
+          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon"></i>
           <span>Pelo menos um número</span>
         </div>
 
         <div id="req-special" class="flex items-center space-x-2.5 text-xs text-slate-500 transition-all duration-200">
-          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon transition-transform duration-200"></i>
+          <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 status-icon"></i>
           <span>Caractere especial (opcional)</span>
         </div>
       </div>
@@ -163,7 +156,7 @@
     <footer class="mt-8 pt-6 border-t border-slate-800/80 text-center">
       <p class="text-sm text-slate-400">
         Já possui uma conta? 
-        <a href="/login" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200 underline-offset-4 hover:underline focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm">
+        <a href="/login" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200 underline-offset-4 hover:underline">
           Voltar ao Login
         </a>
       </p>
@@ -186,7 +179,7 @@
       lucide.createIcons();
     });
 
-    // Validação Dinâmica com Animação de Ícone
+    // Validação Dinâmica da Senha
     const reqLength = document.getElementById('req-length');
     const reqUppercase = document.getElementById('req-uppercase');
     const reqNumber = document.getElementById('req-number');
@@ -199,12 +192,12 @@
         element.classList.add('text-emerald-400', 'font-medium');
         icon.setAttribute('data-lucide', 'check-circle-2');
         icon.classList.remove('text-slate-600');
-        icon.classList.add('text-emerald-400', 'scale-110');
+        icon.classList.add('text-emerald-400');
       } else {
         element.classList.remove('text-emerald-400', 'font-medium');
         element.classList.add('text-slate-500');
         icon.setAttribute('data-lucide', 'x-circle');
-        icon.classList.remove('text-emerald-400', 'scale-110');
+        icon.classList.remove('text-emerald-400');
         icon.classList.add('text-slate-600');
       }
       lucide.createIcons();
@@ -218,18 +211,57 @@
       updateRequirement(reqSpecial, /[^A-Za-z0-9]/.test(val));
     });
 
-    // Estado Loading no Submit
+    // Envio via JSON (evita erro 415)
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
     const btnIcon = document.getElementById('btnIcon');
     const btnSpinner = document.getElementById('btnSpinner');
+    const errorMessage = document.getElementById('errorMessage');
 
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      errorMessage.classList.add('hidden');
       submitBtn.disabled = true;
       btnText.textContent = "Criando conta...";
       if (btnIcon) btnIcon.classList.add('hidden');
       btnSpinner.classList.remove('hidden');
+
+      const username = document.getElementById('username').value;
+      const password = passwordInput.value;
+
+      try {
+        const response = await fetch('/cadastro', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'sucesso') {
+          window.location.href = '/login';
+        } else {
+          errorMessage.textContent = data.mensagem || 'Erro ao criar conta. Tente outro usuário.';
+          errorMessage.classList.remove('hidden');
+
+          submitBtn.disabled = false;
+          btnText.textContent = "Criar conta";
+          if (btnIcon) btnIcon.classList.remove('hidden');
+          btnSpinner.classList.add('hidden');
+        }
+      } catch (err) {
+        errorMessage.textContent = 'Erro ao se conectar com o servidor.';
+        errorMessage.classList.remove('hidden');
+
+        submitBtn.disabled = false;
+        btnText.textContent = "Criar conta";
+        if (btnIcon) btnIcon.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+      }
     });
   </script>
 </body>
