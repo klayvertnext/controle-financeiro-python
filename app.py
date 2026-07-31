@@ -1,20 +1,30 @@
+from datetime import datetime
+import logging
+import os
+import re
+import secrets
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 
 app = Flask(__name__)
-app.secret_key = 'k_financeiro_secret_key_super_seguro'
+basedir = os.path.abspath(os.path.dirname(__file__))
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-# Configuração robusta do SQLite para o Render (/tmp) e ambiente local
-if 'RENDER' in os.environ:
-    db_path = '/tmp/database.db'
-else:
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    db_path = os.path.join(basedir, 'database.db')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+# No Render, configure DATABASE_URL com um PostgreSQL para manter os dados entre deploys.
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('RENDER') == 'true'
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
+
+if os.environ.get('RENDER') and not os.environ.get('SECRET_KEY'):
+    logging.warning('SECRET_KEY não configurada; defina uma chave secreta no Render.')
 
 db = SQLAlchemy(app)
 
@@ -40,12 +50,13 @@ class Renda(db.Model):
     mes_referencia = db.Column(db.String(7), nullable=False)
     salario = db.Column(db.Float, default=0.0)
     extra = db.Column(db.Float, default=0.0)
+    __table_args__ = (db.UniqueConstraint('usuario_id', 'mes_referencia', name='uq_renda_usuario_mes'),)
 
 class Despesa(db.Model):
     __tablename__ = 'despesas'
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    id_unico = db.Column(db.BigInteger, unique=True, nullable=False)
+    id_unico = db.Column(db.BigInteger, nullable=False)
     descricao = db.Column(db.String(200), nullable=False)
     valor_parcela = db.Column(db.Float, nullable=False)
     data_compra = db.Column(db.String(20), nullable=False)
@@ -55,6 +66,7 @@ class Despesa(db.Model):
     total_parcelas = db.Column(db.Integer, default=1)
     mes_referencia = db.Column(db.String(7), nullable=False)
     pago = db.Column(db.Boolean, default=False)
+    __table_args__ = (db.UniqueConstraint('usuario_id', 'id_unico', name='uq_despesa_usuario_ext'),)
 
 class Cartao(db.Model):
     __tablename__ = 'cartoes'
@@ -64,9 +76,47 @@ class Cartao(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     limite = db.Column(db.Float, nullable=False)
     dia_vencimento = db.Column(db.Integer, nullable=False)
+    __table_args__ = (db.UniqueConstraint('usuario_id', 'cartao_id_ext', name='uq_cartao_usuario_ext'),)
 
 with app.app_context():
     db.create_all()
+
+
+MES_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+
+
+def numero_nao_negativo(valor, campo):
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        raise ValueError(f'{campo} deve ser um número válido.')
+    if numero < 0 or numero != numero or numero == float('inf'):
+        raise ValueError(f'{campo} deve ser um número não negativo.')
+    return round(numero, 2)
+
+
+def inteiro_no_intervalo(valor, campo, minimo, maximo):
+    try:
+        numero = int(valor)
+    except (TypeError, ValueError):
+        raise ValueError(f'{campo} deve ser um número inteiro.')
+    if not minimo <= numero <= maximo:
+        raise ValueError(f'{campo} deve estar entre {minimo} e {maximo}.')
+    return numero
+
+
+def mes_valido(valor):
+    return isinstance(valor, str) and bool(MES_RE.fullmatch(valor))
+
+
+@app.get('/healthz')
+def healthcheck():
+    return jsonify({'status': 'ok'}), 200
+
+
+@app.errorhandler(413)
+def payload_muito_grande(_erro):
+    return jsonify({'status': 'erro', 'mensagem': 'Requisição muito grande.'}), 413
 
 # ==========================================
 # ROTAS DE AUTENTICAÇÃO
@@ -183,7 +233,7 @@ def obter_dados():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
 
     user_id = session['usuario_id']
-    user = Usuario.query.get(user_id)
+    user = db.session.get(Usuario, user_id)
     if not user:
         return jsonify({'status': 'erro', 'mensagem': 'Utilizador não encontrado'}), 404
 
@@ -234,50 +284,85 @@ def salvar_dados_completo():
         return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
 
     user_id = session['usuario_id']
-    req_data = request.get_json()
+    req_data = request.get_json(silent=True)
 
     if not req_data:
         return jsonify({'status': 'erro', 'mensagem': 'Dados inválidos'}), 400
 
     try:
         rendas_data = req_data.get('rendas', {})
+        despesas_data = req_data.get('despesas', [])
+        if not isinstance(rendas_data, dict) or not isinstance(despesas_data, list):
+            raise ValueError('Formato de dados inválido.')
+        if len(rendas_data) > 240 or len(despesas_data) > 5000:
+            raise ValueError('Quantidade de registros acima do limite permitido.')
+
+        rendas_validadas = []
         for mes, val in rendas_data.items():
+            if not mes_valido(mes) or not isinstance(val, dict):
+                raise ValueError('Mês de referência inválido.')
+            rendas_validadas.append((mes, numero_nao_negativo(val.get('salario', 0), 'Salário'), numero_nao_negativo(val.get('extra', 0), 'Renda extra')))
+
+        despesas_validadas = []
+        ids_recebidos = set()
+        for item in despesas_data:
+            if not isinstance(item, dict):
+                raise ValueError('Despesa inválida.')
+            id_unico = int(item.get('idUnico'))
+            if id_unico in ids_recebidos:
+                raise ValueError('Existem despesas duplicadas.')
+            ids_recebidos.add(id_unico)
+            descricao = str(item.get('descricao', '')).strip()
+            if not descricao or len(descricao) > 200:
+                raise ValueError('A descrição da despesa é obrigatória e deve ter até 200 caracteres.')
+            mes_ref = str(item.get('mesReferencia', '')).strip()
+            if not mes_valido(mes_ref):
+                raise ValueError('Mês de referência da despesa inválido.')
+            data_compra = str(item.get('dataCompra', '')).strip()
+            datetime.strptime(data_compra, '%Y-%m-%d')
+            parcela_atual = inteiro_no_intervalo(item.get('parcelaAtual', 1), 'Parcela atual', 1, 360)
+            total_parcelas = inteiro_no_intervalo(item.get('totalParcelas', 1), 'Total de parcelas', 1, 360)
+            if parcela_atual > total_parcelas:
+                raise ValueError('A parcela atual não pode superar o total de parcelas.')
+            tipo = str(item.get('tipo', '')).strip()
+            if tipo not in {'Cartao', 'Débito', 'Pix', 'Dinheiro'}:
+                raise ValueError('Tipo de despesa inválido.')
+            despesas_validadas.append({
+                'id_unico': id_unico, 'descricao': descricao,
+                'valor_parcela': numero_nao_negativo(item.get('valorParcela', 0), 'Valor da parcela'),
+                'data_compra': data_compra, 'tipo': tipo,
+                'cartao': str(item.get('cartao', '-')).strip()[:100] or '-',
+                'parcela_atual': parcela_atual, 'total_parcelas': total_parcelas,
+                'mes_referencia': mes_ref, 'pago': bool(item.get('pago', False))
+            })
+
+        for mes, salario, extra in rendas_validadas:
             r_obj = Renda.query.filter_by(usuario_id=user_id, mes_referencia=mes).first()
             if r_obj:
-                r_obj.salario = float(val.get('salario', 0))
-                r_obj.extra = float(val.get('extra', 0))
+                r_obj.salario = salario
+                r_obj.extra = extra
             else:
                 nova_renda = Renda(
                     usuario_id=user_id,
                     mes_referencia=mes,
-                    salario=float(val.get('salario', 0)),
-                    extra=float(val.get('extra', 0))
+                    salario=salario,
+                    extra=extra
                 )
                 db.session.add(nova_renda)
 
         Despesa.query.filter_by(usuario_id=user_id).delete()
-        despesas_data = req_data.get('despesas', [])
-        for d in despesas_data:
-            nova_despesa = Despesa(
-                usuario_id=user_id,
-                id_unico=int(d.get('idUnico')),
-                descricao=str(d.get('descricao', '')).strip(),
-                valor_parcela=float(d.get('valorParcela', 0)),
-                data_compra=str(d.get('dataCompra', '')).strip(),
-                tipo=str(d.get('tipo', '')).strip(),
-                cartao=str(d.get('cartao', '-')).strip(),
-                parcela_atual=int(d.get('parcelaAtual', 1)),
-                total_parcelas=int(d.get('totalParcelas', 1)),
-                mes_referencia=str(d.get('mesReferencia', '')).strip(),
-                pago=bool(d.get('pago', False))
-            )
-            db.session.add(nova_despesa)
+        for dados_despesa in despesas_validadas:
+            db.session.add(Despesa(usuario_id=user_id, **dados_despesa))
 
         db.session.commit()
         return jsonify({'status': 'sucesso', 'mensagem': 'Dados salvos com sucesso!'})
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         db.session.rollback()
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('Erro ao salvar dados financeiros')
+        return jsonify({'status': 'erro', 'mensagem': 'Erro interno ao salvar os dados.'}), 500
 
 @app.route('/cadastrar_cartao', methods=['POST'])
 def cadastrar_cartao():
@@ -289,22 +374,31 @@ def cadastrar_cartao():
 
     try:
         nome_cartao = str(data.get('nome', '')).strip()
-        if not nome_cartao:
-            return jsonify({'status': 'erro', 'mensagem': 'O nome do cartão é obrigatório'}), 400
+        if not nome_cartao or len(nome_cartao) > 100:
+            return jsonify({'status': 'erro', 'mensagem': 'O nome do cartão é obrigatório e deve ter até 100 caracteres.'}), 400
 
+        limite = numero_nao_negativo(data.get('limite', 0), 'Limite')
+        dia_vencimento = inteiro_no_intervalo(data.get('dia_vencimento', 1), 'Dia de vencimento', 1, 31)
+        cartao_id_ext = str(data.get('id', 'c_' + str(os.urandom(4).hex())))
+        if len(cartao_id_ext) > 50:
+            raise ValueError('Identificador do cartão inválido.')
         novo_c = Cartao(
             usuario_id=user_id,
-            cartao_id_ext=str(data.get('id', 'c_' + str(os.urandom(4).hex()))),
+            cartao_id_ext=cartao_id_ext,
             nome=nome_cartao,
-            limite=float(data.get('limite', 0)),
-            dia_vencimento=int(data.get('dia_vencimento', 1))
+            limite=limite,
+            dia_vencimento=dia_vencimento
         )
         db.session.add(novo_c)
         db.session.commit()
         return jsonify({'status': 'sucesso', 'cartao_id': novo_c.cartao_id_ext})
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         db.session.rollback()
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('Erro ao cadastrar cartão')
+        return jsonify({'status': 'erro', 'mensagem': 'Erro interno ao cadastrar cartão.'}), 500
 
 @app.route('/editar_cartao', methods=['POST'])
 def editar_cartao():
@@ -321,13 +415,19 @@ def editar_cartao():
 
     try:
         c.nome = str(data.get('nome', c.nome)).strip()
-        c.limite = float(data.get('limite', c.limite))
-        c.dia_vencimento = int(data.get('dia_vencimento', c.dia_vencimento))
+        if not c.nome or len(c.nome) > 100:
+            raise ValueError('O nome do cartão é obrigatório e deve ter até 100 caracteres.')
+        c.limite = numero_nao_negativo(data.get('limite', c.limite), 'Limite')
+        c.dia_vencimento = inteiro_no_intervalo(data.get('dia_vencimento', c.dia_vencimento), 'Dia de vencimento', 1, 31)
         db.session.commit()
         return jsonify({'status': 'sucesso'})
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         db.session.rollback()
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('Erro ao editar cartão')
+        return jsonify({'status': 'erro', 'mensagem': 'Erro interno ao editar cartão.'}), 500
 
 @app.route('/excluir_cartao', methods=['POST'])
 def excluir_cartao():
