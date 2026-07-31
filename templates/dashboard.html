@@ -338,7 +338,7 @@
         <div class="flex items-center justify-between px-4 py-3">
           <div class="flex items-center space-x-2.5">
             <i data-lucide="${icone}" class="w-5 h-5 shrink-0"></i>
-            <span class="text-xs font-semibold">${mensagem}</span>
+            <span class="text-xs font-semibold">${escapeHTML(mensagem)}</span>
           </div>
           <button onclick="removerToast(this.parentElement.parentElement)" class="ml-3 opacity-80 hover:opacity-100 transition-opacity">
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -365,6 +365,15 @@
       toastEl.classList.remove('toast-enter');
       toastEl.classList.add('toast-exit');
       setTimeout(() => toastEl.remove(), 300);
+    }
+
+    function escapeHTML(valor) {
+      return String(valor ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     // --- PERSISTÊNCIA AUTOMÁTICA NO BANCO DE DADOS ---
@@ -522,7 +531,7 @@
             <div class="flex justify-between items-center mb-1">
               <span class="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center space-x-1.5">
                 <i data-lucide="credit-card" class="w-3.5 h-3.5 text-indigo-500"></i>
-                <span>${c.nome}</span>
+                <span>${escapeHTML(c.nome)}</span>
               </span>
               <span class="text-[10px] text-slate-500 dark:text-slate-400">Venc. Dia ${c.dia_vencimento}</span>
             </div>
@@ -540,10 +549,12 @@
           </div>
 
           <div class="flex justify-end space-x-2 pt-1 border-t border-slate-200 dark:border-slate-800">
-            <button onclick='abrirModalEditarCartao(${JSON.stringify(c)})' class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium transition-colors">Editar</button>
-            <button onclick="excluirCartao('${c.id}')" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[10px] font-medium transition-colors">Excluir</button>
+            <button type="button" data-action="editar" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium transition-colors">Editar</button>
+            <button type="button" data-action="excluir" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[10px] font-medium transition-colors">Excluir</button>
           </div>
         `;
+        cardEl.querySelector('[data-action="editar"]').addEventListener('click', () => abrirModalEditarCartao(c));
+        cardEl.querySelector('[data-action="excluir"]').addEventListener('click', () => excluirCartao(c.id));
         container.appendChild(cardEl);
       });
       lucide.createIcons();
@@ -589,10 +600,10 @@
               </span>
             </div>
           </td>
-          <td class="py-3 px-3 font-medium">${item.descricao} ${item.totalParcelas > 1 ? `(${item.parcelaAtual}/${item.totalParcelas})` : ''}</td>
-          <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${item.dataCompra}</td>
-          <td class="py-3 px-3 text-slate-700 dark:text-slate-300">${item.tipo}</td>
-          <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${item.cartao || '-'}</td>
+          <td class="py-3 px-3 font-medium">${escapeHTML(item.descricao)} ${item.totalParcelas > 1 ? `(${item.parcelaAtual}/${item.totalParcelas})` : ''}</td>
+          <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${escapeHTML(item.dataCompra)}</td>
+          <td class="py-3 px-3 text-slate-700 dark:text-slate-300">${escapeHTML(item.tipo)}</td>
+          <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${escapeHTML(item.cartao || '-')}</td>
           <td class="py-3 px-3 font-bold text-rose-500">${formatarMoeda(item.valorParcela)}</td>
           <td class="py-3 px-3 text-right">
             <button onclick="excluirDespesa(${item.idUnico})" class="p-1.5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 rounded-lg transition-colors" title="Excluir">
