@@ -7,16 +7,21 @@ import time
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import DataError, IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
-database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
-elif database_url and database_url.startswith('postgresql://'):
-    database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+def normalizar_database_url(url):
+    if url and url.startswith('postgres://'):
+        return url.replace('postgres://', 'postgresql+psycopg://', 1)
+    if url and url.startswith('postgresql://'):
+        return url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    return url
+
+
+database_url = normalizar_database_url(os.environ.get('DATABASE_URL'))
 
 # No Render, configure DATABASE_URL com um PostgreSQL para manter os dados entre deploys.
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///' + os.path.join(basedir, 'database.db')
@@ -46,9 +51,7 @@ def proteger_requisicoes():
     if request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}:
         recebido = request.form.get('_csrf_token') or request.headers.get('X-CSRF-Token')
         esperado = session.get('_csrf_token')
-        # Sessões antigas, abertas antes desta proteção, são aceitas apenas durante a migração.
-        # Assim que qualquer página nova gera o token, todas as mutações passam a exigi-lo.
-        if esperado and (not recebido or not secrets.compare_digest(esperado, recebido)):
+        if not esperado or not recebido or not secrets.compare_digest(esperado, recebido):
             abort(403)
 
 @app.after_request
@@ -59,6 +62,15 @@ def impedir_cache_financeiro(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'same-origin'
     response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; img-src 'self' data:; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; "
+        "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    )
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
 # ==========================================
@@ -129,6 +141,55 @@ class Preferencia(db.Model):
     moeda = db.Column(db.String(10), default='BRL')
     tema = db.Column(db.String(10), default='dark')
 
+
+def migrar_banco_configurado():
+    """Copia o banco atual para o destino configurado, de forma transacional e verificável."""
+    if os.environ.get('MIGRATE_TO_NEON') != '1':
+        return
+
+    destino_url = normalizar_database_url(os.environ.get('NEON_DATABASE_URL'))
+    origem_url = app.config['SQLALCHEMY_DATABASE_URI']
+    if not destino_url:
+        raise RuntimeError('NEON_DATABASE_URL não configurada para a migração.')
+    if destino_url == origem_url:
+        app.logger.info('Migração ignorada: origem e destino são o mesmo banco.')
+        return
+
+    destino_engine = create_engine(destino_url, pool_pre_ping=True)
+    ordem_tabelas = ('usuarios', 'rendas', 'cartoes', 'despesas', 'metas_financeiras', 'preferencias')
+    try:
+        with db.engine.connect() as origem:
+            dados_por_tabela = {
+                nome: [dict(linha) for linha in origem.execute(db.metadata.tables[nome].select()).mappings()]
+                for nome in ordem_tabelas
+            }
+
+        with destino_engine.begin() as destino:
+            db.metadata.drop_all(bind=destino)
+            db.metadata.create_all(bind=destino)
+            for nome in ordem_tabelas:
+                tabela = db.metadata.tables[nome]
+                registros = dados_por_tabela[nome]
+                if registros:
+                    destino.execute(tabela.insert(), registros)
+                destino.execute(text(
+                    f"SELECT setval(pg_get_serial_sequence('{nome}', 'id'), "
+                    f"COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM {nome}"
+                ))
+
+            contagens_destino = {
+                nome: destino.execute(text(f'SELECT COUNT(*) FROM {nome}')).scalar_one()
+                for nome in ordem_tabelas
+            }
+            contagens_origem = {nome: len(dados_por_tabela[nome]) for nome in ordem_tabelas}
+            if contagens_destino != contagens_origem:
+                raise RuntimeError(
+                    f'Falha na verificação da migração: origem={contagens_origem}, destino={contagens_destino}'
+                )
+        app.logger.info('Migração para o Neon concluída e verificada: %s', contagens_destino)
+    finally:
+        destino_engine.dispose()
+
 with app.app_context():
     db.create_all()
     if db.engine.dialect.name == 'postgresql':
@@ -142,9 +203,13 @@ with app.app_context():
             if tipo_atual != 'numeric':
                 db.session.execute(text(f"ALTER TABLE {tabela} ALTER COLUMN {coluna} TYPE NUMERIC(14,2) USING ROUND({coluna}::numeric, 2)"))
         db.session.commit()
+    migrar_banco_configurado()
 
 
 MES_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+MAX_VALOR = 999999999999.99
+CATEGORIAS = {'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Assinaturas', 'Outros'}
 
 
 def numero_nao_negativo(valor, campo):
@@ -152,9 +217,21 @@ def numero_nao_negativo(valor, campo):
         numero = float(valor)
     except (TypeError, ValueError):
         raise ValueError(f'{campo} deve ser um número válido.')
-    if numero < 0 or numero != numero or numero == float('inf'):
+    if numero < 0 or numero != numero or numero in {float('inf'), float('-inf')}:
         raise ValueError(f'{campo} deve ser um número não negativo.')
+    if numero > MAX_VALOR:
+        raise ValueError(f'{campo} excede o valor máximo permitido.')
     return round(numero, 2)
+
+
+def booleano(valor, campo='Valor booleano'):
+    if isinstance(valor, bool):
+        return valor
+    if valor in {0, '0', 'false', 'False', None, ''}:
+        return False
+    if valor in {1, '1', 'true', 'True'}:
+        return True
+    raise ValueError(f'{campo} inválido.')
 
 
 def inteiro_no_intervalo(valor, campo, minimo, maximo):
@@ -264,7 +341,7 @@ def cadastro():
 
         if len(nome) < 3 or len(nome) > 100:
             return render_template('cadastro.html', erro="O nome de usuário deve ter entre 3 e 100 caracteres.")
-        if '@' not in email or len(email) > 120:
+        if not EMAIL_RE.fullmatch(email) or len(email) > 120:
             return render_template('cadastro.html', erro="Informe um endereço de e-mail válido.")
         if len(senha) < 12:
             return render_template('cadastro.html', erro="A senha deve ter no mínimo 12 caracteres.")
@@ -422,7 +499,7 @@ def salvar_dados_completo():
                 'categoria': str(item.get('categoria', 'Outros')).strip()[:50] or 'Outros',
                 'cartao': str(item.get('cartao', '-')).strip()[:100] or '-',
                 'parcela_atual': parcela_atual, 'total_parcelas': total_parcelas,
-                'mes_referencia': mes_ref, 'pago': bool(item.get('pago', False))
+                'mes_referencia': mes_ref, 'pago': booleano(item.get('pago', False), 'Situação de pagamento')
             })
 
         for mes, salario, extra in rendas_validadas:
@@ -474,41 +551,85 @@ def salvar_renda():
         db.session.rollback()
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
 
+def montar_despesa(data, usuario_id):
+    if not isinstance(data, dict):
+        raise ValueError('Despesa inválida.')
+    valor = numero_nao_negativo(data.get('valorParcela'), 'Valor')
+    if valor <= 0:
+        raise ValueError('O valor deve ser maior que zero.')
+    descricao = str(data.get('descricao', '')).strip()[:200]
+    if not descricao:
+        raise ValueError('Informe a descrição.')
+    mes = str(data.get('mesReferencia', ''))
+    if not mes_valido(mes):
+        raise ValueError('Mês inválido.')
+    data_compra = str(data.get('dataCompra', ''))
+    datetime.strptime(data_compra, '%Y-%m-%d')
+    tipo = str(data.get('tipo', ''))
+    if tipo not in {'Cartao', 'Débito', 'Pix', 'Dinheiro'}:
+        raise ValueError('Pagamento inválido.')
+    categoria = str(data.get('categoria', 'Outros')).strip()
+    if categoria not in CATEGORIAS:
+        raise ValueError('Categoria inválida.')
+    parcela_atual = inteiro_no_intervalo(data.get('parcelaAtual', 1), 'Parcela', 1, 360)
+    total_parcelas = inteiro_no_intervalo(data.get('totalParcelas', 1), 'Parcelas', 1, 360)
+    if parcela_atual > total_parcelas:
+        raise ValueError('A parcela atual não pode superar o total de parcelas.')
+    id_unico = int(data.get('idUnico'))
+    if not 1 <= id_unico <= 9223372036854775807:
+        raise ValueError('Identificador da despesa inválido.')
+    cartao = '-'
+    if tipo == 'Cartao':
+        cartao = str(data.get('cartao', '')).strip()[:100]
+        if not cartao or not Cartao.query.filter_by(usuario_id=usuario_id, nome=cartao).first():
+            raise ValueError('Selecione um cartão cadastrado.')
+    return Despesa(
+        usuario_id=usuario_id, id_unico=id_unico,
+        id_compra=str(data.get('idCompra') or id_unico)[:50], descricao=descricao,
+        valor_parcela=valor, data_compra=data_compra, tipo=tipo, categoria=categoria,
+        cartao=cartao, parcela_atual=parcela_atual, total_parcelas=total_parcelas,
+        mes_referencia=mes, pago=booleano(data.get('pago', False), 'Situação de pagamento'))
+
+
 @app.route('/api/despesas', methods=['POST'])
 def criar_despesa():
     if 'usuario_id' not in session:
         return jsonify({'status': 'erro'}), 401
-    data = request.get_json(silent=True) or {}
     try:
-        valor = numero_nao_negativo(data.get('valorParcela'), 'Valor')
-        if valor <= 0:
-            raise ValueError('O valor deve ser maior que zero.')
-        descricao = str(data.get('descricao', '')).strip()[:200]
-        if not descricao:
-            raise ValueError('Informe a descrição.')
-        mes = str(data.get('mesReferencia', ''))
-        if not mes_valido(mes):
-            raise ValueError('Mês inválido.')
-        data_compra = str(data.get('dataCompra', ''))
-        datetime.strptime(data_compra, '%Y-%m-%d')
-        tipo = str(data.get('tipo', ''))
-        if tipo not in {'Cartao', 'Débito', 'Pix', 'Dinheiro'}:
-            raise ValueError('Pagamento inválido.')
-        despesa = Despesa(
-            usuario_id=session['usuario_id'], id_unico=int(data.get('idUnico')),
-            id_compra=str(data.get('idCompra') or data.get('idUnico'))[:50], descricao=descricao,
-            valor_parcela=valor, data_compra=data_compra, tipo=tipo,
-            categoria=str(data.get('categoria', 'Outros')).strip()[:50] or 'Outros',
-            cartao=(str(data.get('cartao', '-')).strip()[:100] or '-') if tipo == 'Cartao' else '-',
-            parcela_atual=inteiro_no_intervalo(data.get('parcelaAtual', 1), 'Parcela', 1, 360),
-            total_parcelas=inteiro_no_intervalo(data.get('totalParcelas', 1), 'Parcelas', 1, 360),
-            mes_referencia=mes, pago=bool(data.get('pago', False)))
-        db.session.add(despesa)
+        db.session.add(montar_despesa(request.get_json(silent=True) or {}, session['usuario_id']))
         db.session.commit()
         return jsonify({'status': 'sucesso'})
     except (ValueError, TypeError) as e:
         db.session.rollback()
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+    except (DataError, IntegrityError):
+        db.session.rollback()
+        return jsonify({'status': 'erro', 'mensagem': 'A despesa já existe ou contém um valor inválido.'}), 409
+
+
+@app.route('/api/despesas/lote', methods=['POST'])
+def criar_despesas_em_lote():
+    if 'usuario_id' not in session:
+        return jsonify({'status': 'erro'}), 401
+    itens = (request.get_json(silent=True) or {}).get('despesas', [])
+    if not isinstance(itens, list) or not 1 <= len(itens) <= 360:
+        return jsonify({'status': 'erro', 'mensagem': 'Quantidade de parcelas inválida.'}), 400
+    try:
+        despesas = [montar_despesa(item, session['usuario_id']) for item in itens]
+        ids = [item.id_unico for item in despesas]
+        if len(ids) != len(set(ids)):
+            raise ValueError('Existem parcelas duplicadas.')
+        if Despesa.query.filter(Despesa.usuario_id == session['usuario_id'], Despesa.id_unico.in_(ids)).first():
+            raise ValueError('Uma das parcelas já foi cadastrada.')
+        db.session.add_all(despesas)
+        db.session.commit()
+        return jsonify({'status': 'sucesso', 'quantidade': len(despesas)})
+    except (ValueError, TypeError) as e:
+        db.session.rollback()
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+    except (DataError, IntegrityError):
+        db.session.rollback()
+        return jsonify({'status': 'erro', 'mensagem': 'Não foi possível salvar todas as parcelas.'}), 409
 
 @app.route('/api/despesas/<int:id_unico>', methods=['PUT', 'DELETE'])
 def alterar_despesa(id_unico):
@@ -524,7 +645,10 @@ def alterar_despesa(id_unico):
         return jsonify({'status': 'sucesso'})
     data = request.get_json(silent=True) or {}
     if 'pago' in data:
-        despesa.pago = bool(data['pago'])
+        try:
+            despesa.pago = booleano(data['pago'], 'Situação de pagamento')
+        except ValueError as e:
+            return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
     if 'descricao' in data:
         descricao = str(data['descricao']).strip()[:200]
         if not descricao:
@@ -552,6 +676,8 @@ def cadastrar_cartao():
         nome_cartao = str(data.get('nome', '')).strip()
         if not nome_cartao or len(nome_cartao) > 100:
             return jsonify({'status': 'erro', 'mensagem': 'O nome do cartão é obrigatório e deve ter até 100 caracteres.'}), 400
+        if Cartao.query.filter_by(usuario_id=user_id, nome=nome_cartao).first():
+            return jsonify({'status': 'erro', 'mensagem': 'Já existe um cartão com esse nome.'}), 409
 
         limite = numero_nao_negativo(data.get('limite', 0), 'Limite')
         dia_vencimento = inteiro_no_intervalo(data.get('dia_vencimento', 1), 'Dia de vencimento', 1, 31)
@@ -596,6 +722,11 @@ def editar_cartao():
         c.nome = str(data.get('nome', c.nome)).strip()
         if not c.nome or len(c.nome) > 100:
             raise ValueError('O nome do cartão é obrigatório e deve ter até 100 caracteres.')
+        duplicado = Cartao.query.filter(
+            Cartao.usuario_id == user_id, Cartao.nome == c.nome, Cartao.id != c.id
+        ).first()
+        if duplicado:
+            raise ValueError('Já existe um cartão com esse nome.')
         c.limite = numero_nao_negativo(data.get('limite', c.limite), 'Limite')
         c.dia_vencimento = inteiro_no_intervalo(data.get('dia_vencimento', c.dia_vencimento), 'Dia de vencimento', 1, 31)
         c.dia_fechamento = inteiro_no_intervalo(data.get('dia_fechamento', c.dia_fechamento), 'Dia de fechamento', 1, 31)
@@ -737,8 +868,11 @@ def alterar_senha():
     if not check_password_hash(user.senha, str(data.get('senha_atual', ''))):
         return jsonify({'status': 'erro', 'mensagem': 'Senha atual incorreta.'}), 400
     nova = str(data.get('nova_senha', ''))
+    confirmacao = str(data.get('confirmacao', ''))
     if len(nova) < 12:
         return jsonify({'status': 'erro', 'mensagem': 'A nova senha deve ter no mínimo 12 caracteres.'}), 400
+    if nova != confirmacao:
+        return jsonify({'status': 'erro', 'mensagem': 'A confirmação da nova senha não confere.'}), 400
     user.senha = generate_password_hash(nova)
     db.session.commit()
     return jsonify({'status': 'sucesso'})
@@ -788,7 +922,7 @@ def importar_dados():
                 tipo=str(item.get('tipo', 'Pix')) if item.get('tipo') in {'Cartao','Débito','Pix','Dinheiro'} else 'Pix',
                 categoria=str(item.get('categoria', 'Outros'))[:50], cartao=str(item.get('cartao', '-'))[:100],
                 parcela_atual=parcela_atual, total_parcelas=total_parcelas,
-                mes_referencia=mes_referencia, pago=bool(item.get('pago', False))))
+                mes_referencia=mes_referencia, pago=booleano(item.get('pago', False), 'Situação de pagamento')))
         for item in data.get('cartoes', []):
             if not isinstance(item, dict):
                 continue
