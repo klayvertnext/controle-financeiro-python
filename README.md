@@ -33,6 +33,20 @@ Importante: SQLite no disco temporário não é persistente no Render. Sem `DATA
 
 O endpoint `GET /healthz` pode ser usado como caminho de verificação de saúde.
 
+### Migração controlada para outro PostgreSQL
+
+Para copiar todos os dados do banco definido em `DATABASE_URL` para um banco vazio, configure temporariamente `MIGRATE_TO_NEON=1` e `NEON_DATABASE_URL` com a conexão de destino. Na inicialização, o aplicativo recria as tabelas no destino, copia todos os registros em uma transação e confere as contagens antes de concluir. Depois da confirmação, aponte `DATABASE_URL` para o destino e remova as duas variáveis temporárias.
+
+Mantenha o banco de origem por alguns dias como possibilidade de retorno e faça um backup antes de apagá-lo.
+
+## Testes
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Os testes cobrem autenticação/CSRF, cadastro, parcelas atômicas, cartões duplicados e confirmação de senha. Eles também são executados automaticamente no GitHub.
+
 ## Segurança e dados
 
 - Senhas são armazenadas com hash seguro do Werkzeug.
