@@ -6,6 +6,7 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -63,6 +64,7 @@ class Despesa(db.Model):
     valor_parcela = db.Column(db.Float, nullable=False)
     data_compra = db.Column(db.String(20), nullable=False)
     tipo = db.Column(db.String(30), nullable=False)
+    categoria = db.Column(db.String(50), nullable=False, default='Outros')
     cartao = db.Column(db.String(100), default='-')
     parcela_atual = db.Column(db.Integer, default=1)
     total_parcelas = db.Column(db.Integer, default=1)
@@ -80,8 +82,26 @@ class Cartao(db.Model):
     dia_vencimento = db.Column(db.Integer, nullable=False)
     __table_args__ = (db.UniqueConstraint('usuario_id', 'cartao_id_ext', name='uq_cartao_usuario_ext'),)
 
+class MetaFinanceira(db.Model):
+    __tablename__ = 'metas_financeiras'
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    titulo = db.Column(db.String(120), nullable=False)
+    valor_alvo = db.Column(db.Float, nullable=False)
+    valor_atual = db.Column(db.Float, default=0.0)
+
+class Preferencia(db.Model):
+    __tablename__ = 'preferencias'
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+    moeda = db.Column(db.String(10), default='BRL')
+    tema = db.Column(db.String(10), default='dark')
+
 with app.app_context():
     db.create_all()
+    if db.engine.dialect.name == 'postgresql':
+        db.session.execute(text("ALTER TABLE despesas ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) DEFAULT 'Outros' NOT NULL"))
+        db.session.commit()
 
 
 MES_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
@@ -254,6 +274,7 @@ def obter_dados():
             'valorParcela': d.valor_parcela,
             'dataCompra': d.data_compra,
             'tipo': d.tipo,
+            'categoria': d.categoria or 'Outros',
             'cartao': d.cartao,
             'parcelaAtual': d.parcela_atual,
             'totalParcelas': d.total_parcelas,
@@ -333,6 +354,7 @@ def salvar_dados_completo():
                 'id_unico': id_unico, 'descricao': descricao,
                 'valor_parcela': numero_nao_negativo(item.get('valorParcela', 0), 'Valor da parcela'),
                 'data_compra': data_compra, 'tipo': tipo,
+                'categoria': str(item.get('categoria', 'Outros')).strip()[:50] or 'Outros',
                 'cartao': str(item.get('cartao', '-')).strip()[:100] or '-',
                 'parcela_atual': parcela_atual, 'total_parcelas': total_parcelas,
                 'mes_referencia': mes_ref, 'pago': bool(item.get('pago', False))
@@ -446,6 +468,85 @@ def excluir_cartao():
         db.session.commit()
         return jsonify({'status': 'sucesso'})
     return jsonify({'status': 'erro', 'mensagem': 'Cartão não encontrado'}), 404
+
+@app.route('/api/metas', methods=['GET', 'POST'])
+def api_metas():
+    if 'usuario_id' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    user_id = session['usuario_id']
+    if request.method == 'GET':
+        metas = MetaFinanceira.query.filter_by(usuario_id=user_id).order_by(MetaFinanceira.id.desc()).all()
+        return jsonify({'status': 'sucesso', 'metas': [
+            {'id': m.id, 'titulo': m.titulo, 'valor_alvo': m.valor_alvo, 'valor_atual': m.valor_atual}
+            for m in metas
+        ]})
+    data = request.get_json(silent=True) or {}
+    try:
+        titulo = str(data.get('titulo', '')).strip()[:120]
+        if not titulo:
+            raise ValueError('Informe o nome da meta.')
+        alvo = numero_nao_negativo(data.get('valor_alvo'), 'Valor desejado')
+        if alvo <= 0:
+            raise ValueError('O valor desejado deve ser maior que zero.')
+        meta = MetaFinanceira(usuario_id=user_id, titulo=titulo, valor_alvo=alvo,
+                              valor_atual=numero_nao_negativo(data.get('valor_atual', 0), 'Valor acumulado'))
+        db.session.add(meta)
+        db.session.commit()
+        return jsonify({'status': 'sucesso'})
+    except (ValueError, TypeError) as e:
+        db.session.rollback()
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 400
+
+@app.route('/api/metas/<int:meta_id>', methods=['PUT', 'DELETE'])
+def alterar_meta(meta_id):
+    if 'usuario_id' not in session:
+        return jsonify({'status': 'erro'}), 401
+    meta = MetaFinanceira.query.filter_by(id=meta_id, usuario_id=session['usuario_id']).first_or_404()
+    if request.method == 'DELETE':
+        db.session.delete(meta)
+    else:
+        data = request.get_json(silent=True) or {}
+        meta.valor_atual = numero_nao_negativo(data.get('valor_atual', meta.valor_atual), 'Valor acumulado')
+    db.session.commit()
+    return jsonify({'status': 'sucesso'})
+
+@app.route('/api/configuracoes', methods=['GET', 'POST'])
+def configuracoes():
+    if 'usuario_id' not in session:
+        return jsonify({'status': 'erro'}), 401
+    user_id = session['usuario_id']
+    pref = Preferencia.query.filter_by(usuario_id=user_id).first()
+    if not pref:
+        pref = Preferencia(usuario_id=user_id)
+        db.session.add(pref)
+        db.session.commit()
+    if request.method == 'GET':
+        user = db.session.get(Usuario, user_id)
+        return jsonify({'status': 'sucesso', 'nome': user.nome, 'email': user.email,
+                        'moeda': pref.moeda, 'tema': pref.tema})
+    data = request.get_json(silent=True) or {}
+    if data.get('moeda') in {'BRL', 'USD', 'EUR'}:
+        pref.moeda = data['moeda']
+    if data.get('tema') in {'light', 'dark'}:
+        pref.tema = data['tema']
+    db.session.commit()
+    return jsonify({'status': 'sucesso'})
+
+@app.route('/api/exportar')
+def exportar_dados():
+    if 'usuario_id' not in session:
+        return jsonify({'status': 'erro'}), 401
+    user = db.session.get(Usuario, session['usuario_id'])
+    payload = {
+        'usuario': {'nome': user.nome, 'email': user.email},
+        'rendas': [{'mes': r.mes_referencia, 'salario': r.salario, 'extra': r.extra} for r in user.rendas],
+        'despesas': [{'descricao': d.descricao, 'valor': d.valor_parcela, 'data': d.data_compra,
+                      'categoria': d.categoria or 'Outros', 'tipo': d.tipo, 'pago': d.pago} for d in user.despesas],
+        'cartoes': [{'nome': c.nome, 'limite': c.limite, 'vencimento': c.dia_vencimento} for c in user.cartoes]
+    }
+    response = jsonify(payload)
+    response.headers['Content-Disposition'] = 'attachment; filename=controle-financeiro.json'
+    return response
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
