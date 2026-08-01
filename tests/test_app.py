@@ -66,6 +66,7 @@ class FinanceiroTestCase(unittest.TestCase):
     def test_healthcheck_e_csrf(self):
         self.assertEqual(self.client.get('/healthz').status_code, 200)
         self.criar_usuario_logado()
+        self.assertEqual(self.client.get('/dashboard').status_code, 200)
         resposta = self.client.post('/api/rendas', json={'mes': '2026-08', 'salario': 1, 'extra': 0})
         self.assertEqual(resposta.status_code, 403)
 
